@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>🏆 Статистика</h1>
+
+{% if stat %}
+
+<hr>
+
+<h2>
+✅ Правильных ответов:
+{{ stat.correct }}
+</h2>
+
+<h2>
+❌ Неправильных ответов:
+{{ stat.wrong }}
+</h2>
+
+<h2>
+⭐ Звёзд:
+{{ stat.stars }}
+</h2>
+
+<h2>
+🏆 Рекорд:
+{{ stat.record }}
+</h2>
+
+{% set total = stat.correct + stat.wrong %}
+
+{% if total > 0 %}
+
+<h2>
+🎯 Точность:
+{{ (stat.correct * 100 / total)|round(1) }} %
+</h2>
+
+{% endif %}
+
+{% else %}
+
+<h2>
+Сначала выберите профиль.
+</h2>
+
+{% endif %}
+
+<hr>
+
+<a href="{{ url_for('reset_statistics') }}">
+    <button>
+        🗑 Сбросить статистику
+    </button>
+</a>
+
+<br><br>
+
+<a href="{{ url_for('index') }}">
+    <button>
+        🏠 Главное меню
+    </button>
+</a>
+
+<br><br>
+
+<a href="{{ url_for('game') }}">
+    <button>
+        ⬅ Вернуться к игре
+    </button>
+</a>
+
+{% endblock %}

@@ -1,0 +1,108 @@
+/* body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 50px;
+    font-size: 24px;
+} */
+/* input[type="number"] {
+    font-size: 32px;
+    padding: 12px;
+    width: 150px;
+    text-align: center;
+} */
+/* button {
+    font-size: 24px;
+    padding: 10px 20px;
+    margin-top: 10px;
+} */
+.feedback.correct {
+    color: green;
+    font-weight: bold;
+}
+.feedback.incorrect {
+    color: red;
+    font-weight: bold;
+}
+
+/* body{
+    background-color: lightblue;
+    text-align:center;
+    font-family: Arial;
+} */
+
+/* button{
+    width:220px;
+    height:50px;
+    font-size:24px;
+    margin:10px;
+} */
+
+
+
+
+body{
+    text-align:center;
+    background-color:lightblue;
+    font-family:Arial;
+}
+
+/* button{
+    width:250px;
+    height:60px;
+    font-size:24px;
+    margin:10px;
+} */
+
+button{
+    transition:0.3s;
+}
+
+button:hover{
+    transform:scale(1.1);
+    box-shadow:0 0 20px yellow;
+    cursor:pointer;
+}
+
+input{
+    width:200px;
+    height:50px;
+    font-size:30px;
+    text-align:center;
+}
+
+h2{
+    font-size:70px;
+}
+
+.space-theme button{
+    color:white;
+    background-color:rgba(0,0,0,0.5);
+    border:1px solid white;
+}
+
+.space-theme input,
+.space-theme select{
+    background-color:rgba(0,0,0,0.5);
+    color:white;
+    border:1px solid white;
+}
+
+.space-theme,
+.space-theme h1,
+.space-theme h2,
+.space-theme h3,
+.space-theme p,
+.space-theme a,
+.space-theme label{
+    color:white;
+}
+
+.feedback.correct {
+    color: green;
+    font-weight: bold;
+}
+
+.feedback.incorrect {
+    color: red;
+    font-weight: bold;
+}

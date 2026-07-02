@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Математическая игра</h1>
+
+{% if message %}
+    <div class="feedback correct">
+        {{ message }}
+    </div>
+
+    <br>
+{% endif %}
+
+<p>Выберите режим:</p>
+
+<a href="/select/add"><button>➕ Сложение</button></a>
+<br>
+
+<a href="/select/sub"><button>➖ Вычитание</button></a>
+<br>
+
+<a href="/select/mul"><button>✖ Умножение</button></a>
+<br>
+
+<a href="/select/div"><button>➗ Деление</button></a>
+<br>
+
+<a href="/select/all"><button>🔀 Все действия</button></a>
+
+<hr>
+
+<a href="{{ url_for('settings') }}">
+    <button>⚙ Настройки</button>
+</a>
+
+<br>
+
+<a href="{{ url_for('statistics') }}">
+    <button>🏆 Статистика</button>
+</a>
+
+<br>
+
+<a href="{{ url_for('profiles') }}">
+    <button>👦 Профили</button>
+</a>
+
+<hr>
+<br>
+
+<a href="{{ url_for('feedback') }}">
+    <button>✉ Обратная связь</button>
+</a>
+
+{% endblock %}

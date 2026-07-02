@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Результаты</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h2>Результаты тренировки</h2>
+    <p>Правильных ответов: {{ correct }}</p>
+    <p>Ошибок: {{ wrong }}</p>
+    <a href="{{ url_for('math') }}">Начать сначала</a>
+</body>
+</html>

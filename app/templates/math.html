@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Тренировка по математике</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h2>Посчитай правильно:</h2>
+    
+    {% if feedback %}
+        <p class="{{ feedback_class }}"><strong>{{ feedback }}</strong></p>
+    {% endif %}
+    {{ sss }}
+    <form method="POST">
+        <p>{{ num1 }} {{ action_math }} {{ num2 }} =
+            <input type="number" name="answer" required>
+        </p>
+        <input type="hidden" name="num1" value="{{ num1 }}">
+        <input type="hidden" name="action_math" value="{{ action_math }}">
+        <input type="hidden" name="num2" value="{{ num2 }}">
+        <button type="submit" name="action" value="next">Следующий пример</button>
+        {% if correct is defined %}
+            <p>Правильных ответов: {{ correct }}</p>
+            <p>Ошибок: {{ wrong }}</p>
+        {% endif %}
+        <button type="submit" name="action" value="stop">Закончить тренировку</button>
+    </form>
+</body>
+</html>

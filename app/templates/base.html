@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Math Game</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="{% if settings.background_image == 'Space.png' %}space-theme{% endif %}"
+    style="background-color: {{ settings.background_color }};
+    {% if settings.background_image %}
+        background-image:url('{{ url_for("static", filename="backgrounds/" + settings.background_image) }}');
+        background-size:cover;
+    {% endif %}
+    ">
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        let music = document.getElementById("background-music");
+
+        if (music) {
+            music.volume = {{ settings.background_volume / 100 }};
+        }
+
+    });
+</script>
+
+{% if current_profile %}
+    <h3>
+        👦 Игрок: {{ current_profile.name }} ⭐ {{ current_profile.stars }}
+    </h3>
+{% endif %}
+
+{% block content %}
+{% endblock %}
+
+{% if settings.background_music %}
+    <audio
+    autoplay
+    loop
+    volume="{{ settings.background_volume / 100 }}"
+    id="background-music">
+
+    <source src="{{ url_for('static', filename='music/background.mp3') }}">
+
+    </audio>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="{{ url_for('static', filename='js/effects.js') }}"></script>
+
+</body>
+</html>

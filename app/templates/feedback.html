@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>✉ Обратная связь</h1>
+
+<form action="{{ url_for('send_feedback') }}" method="post">
+
+    <p>Ваше имя</p>
+
+    <input
+        type="text"
+        name="name"
+        required>
+
+    <br><br>
+
+    <p>E-mail (необязательно)</p>
+
+    <input
+        type="email"
+        name="email">
+
+    <br><br>
+
+    <p>Сообщение</p>
+
+    <textarea
+        name="message"
+        rows="10"
+        cols="60"
+        required></textarea>
+
+    <br><br>
+
+    <button type="submit">
+        📩 Отправить
+    </button>
+
+</form>
+
+<br>
+
+<a href="{{ url_for('index') }}">
+    <button>🏠 Главное меню</button>
+</a>
+
+{% endblock %}

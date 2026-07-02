@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>👦 Профили</h1>
+
+{% for profile in profiles %}
+
+<hr>
+
+<h2>{{ profile.name }}</h2>
+
+<a href="{{ url_for('select_profile', index=loop.index0) }}">
+    <button>Выбрать</button>
+</a>
+
+<a href="{{ url_for('delete_profile', index=loop.index0) }}"
+   onclick="return confirm('Удалить профиль {{ profile.name }}?')">
+
+    <button>🗑 Удалить</button>
+
+</a>
+
+{% endfor %}
+
+<hr>
+
+<form action="/add_profile" method="post">
+
+    <input
+        type="text"
+        name="name"
+        placeholder="Имя игрока"
+        required>
+
+    <button type="submit">
+        ➕ Добавить
+    </button>
+
+</form>
+
+<br>
+
+<a href="{{ url_for('index') }}">
+    <button>🏠 Главное меню</button>
+</a>
+
+{% endblock %}

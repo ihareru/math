@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<form action="{{ url_for('save_settings_route') }}" method="post">
+
+<h2>🎨 Цвет фона</h2>
+
+<input
+type="color"
+name="background_color"
+value="{{ settings.background_color }}">
+
+
+<h2>Фоновая картинка</h2>
+
+<select name="background_image">
+
+<option value="">Без картинки</option>
+
+{% for image in images %}
+
+<option
+value="{{ image }}"
+{% if image == settings.background_image %}
+selected
+{% endif %}
+>
+
+{{ image }}
+
+</option>
+
+{% endfor %}
+
+</select>
+
+
+<h2>🔊 Звуки</h2>
+
+<label>
+    <input
+        type="checkbox"
+        name="background_music"
+            {% if settings.background_music %}
+                checked
+            {% endif %}>
+        Фоновая музыка
+</label>
+
+<br>
+
+Громкость:
+<input
+type="range"
+name="background_volume"
+min="0"
+max="100"
+value="{{ settings.background_volume }}">
+
+{{ settings.background_volume }}%
+
+
+
+
+
+
+
+<br><br>
+
+
+
+
+
+
+
+
+
+<label>
+<input
+type="checkbox"
+name="success_sound"
+{% if settings.success_sound %}
+checked
+{% endif %}
+>
+Правильный ответ
+</label>
+
+<br>
+
+Громкость:
+<input
+type="range"
+name="success_volume"
+min="0"
+max="100"
+value="{{ settings.success_volume }}">
+
+{{ settings.success_volume }}%
+
+
+
+
+
+
+
+
+
+<br><br>
+
+
+
+
+
+
+
+
+
+
+
+<label>
+<input
+type="checkbox"
+name="fail_sound"
+{% if settings.fail_sound %}
+checked
+{% endif %}
+>
+Ошибка
+</label>
+
+<br>
+
+Громкость:
+<input
+type="range"
+name="fail_volume"
+min="0"
+max="100"
+value="{{ settings.fail_volume }}">
+
+{{ settings.fail_volume }}%
+
+
+
+
+
+
+
+
+
+
+
+
+
+<br><br>
+
+<button type="submit">
+💾 Сохранить
+</button>
+
+</form>
+
+<hr>
+
+<a href="{{ url_for('index') }}">
+    <button>🎮 Вернуться в игру</button>
+</a>
+
+<a href="{{ url_for('game') }}">
+    <button>⬅ Вернуться к примерам</button>
+</a>
+
+{% endblock %}

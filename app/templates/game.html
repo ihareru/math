@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Реши пример {{ title }}</h1>
+
+{% if message %}
+    <h1> 
+        {{ message }}
+    </h1>
+{% endif %}
+
+<h2>{{ num1 }} {{ operation }} {{ num2 }}</h2>
+
+<h3>🔥 Серия: {{ streak }}</h3>
+
+<form action="/check" method="post">
+    <input
+        type="number"
+        name="answer"
+        autofocus
+        required>
+
+    <br><br>
+
+    <button type="submit">Ответить</button>
+</form>
+
+<hr>
+
+<h3>✅ Правильных: {{ correct }}</h3>
+
+<h3>❌ Неправильных: {{ wrong }}</h3>
+
+<a href="/"><button>Главное меню</button></a>
+
+{% if success == True and settings.success_sound %}
+    <audio autoplay id="success-sound">
+        <source src="{{ url_for('static', filename='music/success.mp3') }}">
+    </audio>
+
+    <script>
+        document.getElementById("success-sound").volume = {{ settings.success_volume / 100 }};
+    </script>
+{% endif %}
+
+{% if success == False and settings.fail_sound %}
+    <audio autoplay id="fail-sound">
+        <source src="{{ url_for('static', filename='music/fail.mp3') }}">
+    </audio>
+
+    <script>
+        document.getElementById("fail-sound").volume = {{ settings.fail_volume / 100 }};
+    </script>
+{% endif %}
+
+{% endblock %}
