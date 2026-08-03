@@ -34,6 +34,7 @@ DJANGO_APPS = [
 
 LOCAL_APPS = [
     "apps.accounts.apps.AccountsConfig",
+    "apps.dashboard.apps.DashboardConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
@@ -145,6 +146,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
 
+AUTHENTICATION_BACKENDS = [
+    "apps.accounts.backends.EmailBackend",
+]
 
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "dashboard:home"
@@ -165,3 +169,40 @@ SITE_URL = os.getenv(
     "SITE_URL",
     "http://127.0.0.1:8000",
 )
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": (
+                "{levelname} "
+                "{asctime} "
+                "{name} "
+                "{message}"
+            ),
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": [
+            "console",
+        ],
+        "level": "INFO",
+    },
+    "loggers": {
+        "apps.accounts": {
+            "handlers": [
+                "console",
+            ],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

@@ -14,10 +14,8 @@ class CustomUserAdmin(UserAdmin):
     list_display = [
         "display_name",
         "email",
-        "phone",
         "registration_method",
         "email_verified",
-        "phone_verified",
         "is_active",
         "is_staff",
         "date_joined",
@@ -26,7 +24,6 @@ class CustomUserAdmin(UserAdmin):
     list_filter = [
         "registration_method",
         "email_verified",
-        "phone_verified",
         "show_in_rating",
         "is_active",
         "is_staff",

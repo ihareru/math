@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Math Game{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <h1>Математическая игра</h1>
+
+    {% if user.is_authenticated %}
+        <p>
+            Вы вошли как
+            <strong>{{ user.display_name }}</strong>.
+        </p>
+
+        <p>
+            <a href="{% url 'accounts:logout' %}">
+                Выйти
+            </a>
+        </p>
+    {% else %}
+        <p>
+            <a href="{% url 'accounts:register' %}">
+                Зарегистрироваться
+            </a>
+        </p>
+
+        <p>
+            <a href="{% url 'accounts:login' %}">
+                Войти
+            </a>
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

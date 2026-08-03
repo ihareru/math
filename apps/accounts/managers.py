@@ -6,26 +6,28 @@ class UserManager(BaseUserManager):
 
     def create_user(
         self,
-        email=None,
-        phone=None,
+        email,
         password=None,
         **extra_fields,
     ):
-        if not email and not phone:
+        if not email:
             raise ValueError(
-                "Необходимо указать email или номер телефона."
+                "Необходимо указать email."
             )
 
-        if email:
-            email = self.normalize_email(email).lower()
+        email = self.normalize_email(email).lower()
 
         extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
 
+        extra_fields.setdefault(
+            "registration_method",
+            self.model.RegistrationMethod.EMAIL,
+        )
+
         user = self.model(
             email=email,
-            phone=phone,
             **extra_fields,
         )
 
@@ -36,15 +38,24 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(
-            self,
-            email=None,
-            phone=None,
-            password=None,
-            **extra_fields,
+        self,
+        email,
+        password=None,
+        **extra_fields,
     ):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
+
+        extra_fields.setdefault(
+            "registration_method",
+            self.model.RegistrationMethod.EMAIL,
+        )
+
+        extra_fields.setdefault(
+            "email_verified",
+            True,
+        )
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError(
@@ -53,31 +64,12 @@ class UserManager(BaseUserManager):
 
         if extra_fields.get("is_superuser") is not True:
             raise ValueError(
-                "Суперпользователь должен иметь is_superuser=True."
-            )
-
-        if email:
-            extra_fields.setdefault(
-                "registration_method",
-                self.model.RegistrationMethod.EMAIL,
-            )
-            extra_fields.setdefault(
-                "email_verified",
-                True,
-            )
-        elif phone:
-            extra_fields.setdefault(
-                "registration_method",
-                self.model.RegistrationMethod.PHONE,
-            )
-            extra_fields.setdefault(
-                "phone_verified",
-                True,
+                "Суперпользователь должен иметь "
+                "is_superuser=True."
             )
 
         return self.create_user(
             email=email,
-            phone=phone,
             password=password,
             **extra_fields,
         )

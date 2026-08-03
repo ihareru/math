@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}
+Подтверждение регистрации — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <h1>Подтверждение регистрации</h1>
+
+    <p>
+        Код отправлен на:
+        <strong>
+            {{ pending_user.primary_login }}
+        </strong>
+    </p>
+
+    <p>
+        Код действует 10 минут.
+    </p>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <ul class="form-errors">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="{{ form.code.id_for_label }}">
+                {{ form.code.label }}
+            </label>
+
+            {{ form.code }}
+
+            {% for error in form.code.errors %}
+                <div class="form-errors">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button
+                class="button"
+                type="submit"
+            >
+                Подтвердить
+            </button>
+        </div>
+    </form>
+
+    <form
+        action="{% url 'accounts:resend_registration_code' %}"
+        method="post"
+    >
+        {% csrf_token %}
+
+        <button
+            class="link-button"
+            type="submit"
+        >
+            Отправить код повторно
+        </button>
+    </form>
+</section>
+{% endblock %}

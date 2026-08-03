@@ -15,7 +15,6 @@ from .managers import UserManager
 class User(AbstractBaseUser, PermissionsMixin):
     class RegistrationMethod(models.TextChoices):
         EMAIL = "email", "Email"
-        PHONE = "phone", "Телефон"
 
     id = models.UUIDField(
         primary_key=True,
@@ -116,61 +115,28 @@ class User(AbstractBaseUser, PermissionsMixin):
     def clean(self):
         super().clean()
 
-        if not self.email and not self.phone:
-            raise ValidationError(
-                "У пользователя должен быть email или телефон."
-            )
-
-        if self.email:
-            self.email = self.email.strip().lower()
-
-        if (
-            self.registration_method
-            == self.RegistrationMethod.EMAIL
-            and not self.email
-        ):
+        if not self.email:
             raise ValidationError(
                 {
                     "email": (
-                        "При регистрации по email необходимо "
-                        "указать email."
+                        "Для учётной записи необходимо указать email."
                     )
                 }
             )
 
-        if (
-            self.registration_method
-            == self.RegistrationMethod.PHONE
-            and not self.phone
-        ):
-            raise ValidationError(
-                {
-                    "phone": (
-                        "При регистрации по телефону необходимо "
-                        "указать телефон."
-                    )
-                }
-            )
+        self.email = self.email.strip().lower()
+
+        self.registration_method = (
+            self.RegistrationMethod.EMAIL
+        )
 
     @property
     def primary_login(self):
-        if (
-            self.registration_method
-            == self.RegistrationMethod.PHONE
-        ):
-            return str(self.phone)
-
-        return self.email or str(self.phone)
+        return self.email
 
     @property
     def registration_confirmed(self):
-        if (
-            self.registration_method
-            == self.RegistrationMethod.EMAIL
-        ):
-            return self.email_verified
-
-        return self.phone_verified
+        return self.email_verified
 
 
 class VerificationCode(models.Model):
