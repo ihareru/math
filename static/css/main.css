@@ -222,3 +222,29 @@ textarea {
         padding-block: 1rem;
     }
 }
+
+.account-data {
+    display: grid;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.account-data div {
+    padding: 1rem;
+    background: #f7f9fd;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.account-data dt {
+    margin-bottom: 0.35rem;
+    color: var(--muted-color);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.account-data dd {
+    margin: 0;
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+}

@@ -1,4 +1,3 @@
-import logging
 import secrets
 from datetime import timedelta
 
@@ -14,14 +13,6 @@ from django.utils import timezone
 from apps.accounts.models import VerificationCode
 
 
-logger = logging.getLogger(__name__)
-
-
-CODE_LENGTH = 6
-CODE_LIFETIME_MINUTES = 10
-RESEND_COOLDOWN_SECONDS = 60
-
-
 class VerificationError(Exception):
     """Базовая ошибка подтверждения."""
 
@@ -35,16 +26,18 @@ class VerificationAttemptsExceededError(VerificationError):
 
 
 class VerificationInvalidCodeError(VerificationError):
-    """Введён неправильный код."""
+    """Введён неверный код."""
 
 
 class VerificationResendTooEarlyError(VerificationError):
     """Повторный код запрошен слишком рано."""
 
 
-def generate_numeric_code():
-    minimum = 10 ** (CODE_LENGTH - 1)
-    maximum = (10 ** CODE_LENGTH) - 1
+def generate_numeric_code() -> str:
+    code_length = settings.VERIFICATION_CODE_LENGTH
+
+    minimum = 10 ** (code_length - 1)
+    maximum = (10 ** code_length) - 1
 
     return str(
         secrets.randbelow(maximum - minimum + 1)
@@ -56,9 +49,16 @@ def create_registration_code(user):
     return create_verification_code(
         user=user,
         purpose=VerificationCode.Purpose.REGISTRATION,
-        delivery_method=(
-            VerificationCode.DeliveryMethod.EMAIL
-        ),
+        delivery_method=VerificationCode.DeliveryMethod.EMAIL,
+        destination=user.email,
+    )
+
+
+def create_password_reset_code(user):
+    return create_verification_code(
+        user=user,
+        purpose=VerificationCode.Purpose.PASSWORD_RESET,
+        delivery_method=VerificationCode.DeliveryMethod.EMAIL,
         destination=user.email,
     )
 
@@ -88,20 +88,30 @@ def create_verification_code(
         cooldown_until = (
             latest_code.created_at
             + timedelta(
-                seconds=RESEND_COOLDOWN_SECONDS,
+                seconds=(
+                    settings
+                    .VERIFICATION_CODE_RESEND_COOLDOWN_SECONDS
+                )
             )
         )
 
         if now < cooldown_until:
-            remaining = int(
-                (cooldown_until - now).total_seconds()
+            remaining_seconds = max(
+                1,
+                int(
+                    (
+                        cooldown_until - now
+                    ).total_seconds()
+                ),
             )
 
             raise VerificationResendTooEarlyError(
-                f"Повторный код можно запросить "
-                f"через {remaining} сек."
+                "Повторный код можно запросить "
+                f"через {remaining_seconds} сек."
             )
 
+    # Все ранее выданные и ещё не использованные коды
+    # такого же назначения помечаем использованными.
     VerificationCode.objects.filter(
         user=user,
         purpose=purpose,
@@ -121,8 +131,14 @@ def create_verification_code(
         expires_at=(
             now
             + timedelta(
-                minutes=CODE_LIFETIME_MINUTES,
+                minutes=(
+                    settings
+                    .VERIFICATION_CODE_LIFETIME_MINUTES
+                )
             )
+        ),
+        max_attempts=(
+            settings.VERIFICATION_CODE_MAX_ATTEMPTS
         ),
     )
 
@@ -139,65 +155,51 @@ def deliver_verification_code(
     verification,
     raw_code,
 ):
-    send_email_code(
-        destination=verification.destination,
-        code=raw_code,
-    )
+    if (
+        verification.purpose
+        == VerificationCode.Purpose.PASSWORD_RESET
+    ):
+        subject = "Восстановление пароля Math Game"
 
+        message = (
+            "Вы запросили восстановление пароля "
+            "в Math Game.\n\n"
+            f"Код подтверждения: {raw_code}\n\n"
+            "Код действует "
+            f"{settings.VERIFICATION_CODE_LIFETIME_MINUTES} "
+            "минут.\n\n"
+            "Если вы не запрашивали восстановление пароля, "
+            "проигнорируйте это сообщение."
+        )
+    else:
+        subject = "Код подтверждения Math Game"
 
-def send_email_code(
-    *,
-    destination,
-    code,
-):
-    send_mail(
-        subject="Код подтверждения Math Game",
-        message=(
+        message = (
             "Ваш код подтверждения Math Game: "
-            f"{code}\n\n"
-            f"Код действует "
-            f"{CODE_LIFETIME_MINUTES} минут.\n\n"
+            f"{raw_code}\n\n"
+            "Код действует "
+            f"{settings.VERIFICATION_CODE_LIFETIME_MINUTES} "
+            "минут.\n\n"
             "Если вы не регистрировались, "
             "проигнорируйте это сообщение."
-        ),
+        )
+
+    send_mail(
+        subject=subject,
+        message=message,
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[
-            destination,
+            verification.destination,
         ],
         fail_silently=False,
     )
 
 
-def send_sms_code(
-    *,
-    destination,
-    code,
-):
-    if settings.DEBUG:
-        logger.warning(
-            "DEV SMS для %s: код %s",
-            destination,
-            code,
-        )
-
-        print(
-            "\n"
-            "========================================\n"
-            f"DEV SMS для {destination}\n"
-            f"Код подтверждения: {code}\n"
-            "========================================\n"
-        )
-        return
-
-    raise VerificationError(
-        "SMS-провайдер пока не настроен."
-    )
-
-
 @transaction.atomic
-def verify_registration_code(
+def verify_code(
     *,
     user,
+    purpose,
     raw_code,
 ):
     verification = (
@@ -205,9 +207,7 @@ def verify_registration_code(
         .select_for_update()
         .filter(
             user=user,
-            purpose=(
-                VerificationCode.Purpose.REGISTRATION
-            ),
+            purpose=purpose,
             used_at__isnull=True,
         )
         .order_by("-created_at")
@@ -221,6 +221,7 @@ def verify_registration_code(
 
     if verification.is_expired:
         verification.used_at = timezone.now()
+
         verification.save(
             update_fields=[
                 "used_at",
@@ -232,8 +233,17 @@ def verify_registration_code(
         )
 
     if not verification.has_attempts_left:
+        verification.used_at = timezone.now()
+
+        verification.save(
+            update_fields=[
+                "used_at",
+            ]
+        )
+
         raise VerificationAttemptsExceededError(
-            "Превышено количество попыток."
+            "Превышено допустимое количество попыток. "
+            "Запросите новый код."
         )
 
     verification.attempts += 1
@@ -242,17 +252,27 @@ def verify_registration_code(
         raw_code,
         verification.code_hash,
     ):
+        update_fields = [
+            "attempts",
+        ]
+
+        if (
+            verification.attempts
+            >= verification.max_attempts
+        ):
+            verification.used_at = timezone.now()
+            update_fields.append("used_at")
+
         verification.save(
-            update_fields=[
-                "attempts",
-            ]
+            update_fields=update_fields,
         )
 
         raise VerificationInvalidCodeError(
-            "Введён неправильный код."
+            "Введён неверный код."
         )
 
     verification.used_at = timezone.now()
+
     verification.save(
         update_fields=[
             "attempts",
@@ -260,8 +280,22 @@ def verify_registration_code(
         ]
     )
 
-    user.email_verified = True
+    return verification
 
+
+@transaction.atomic
+def verify_registration_code(
+    *,
+    user,
+    raw_code,
+):
+    verify_code(
+        user=user,
+        purpose=VerificationCode.Purpose.REGISTRATION,
+        raw_code=raw_code,
+    )
+
+    user.email_verified = True
     user.is_active = True
 
     user.save(
@@ -272,3 +306,15 @@ def verify_registration_code(
     )
 
     return user
+
+
+def verify_password_reset_code(
+    *,
+    user,
+    raw_code,
+):
+    return verify_code(
+        user=user,
+        purpose=VerificationCode.Purpose.PASSWORD_RESET,
+        raw_code=raw_code,
+    )

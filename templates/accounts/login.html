@@ -80,5 +80,18 @@
             </a>
         </div>
     </form>
+    <hr>
+
+    <p>
+        <a href="{% url 'accounts:password_reset_request' %}">
+            Забыли пароль?
+        </a>
+    </p>
+
+    <p>
+        <a href="{% url 'accounts:resume_registration' %}">
+            Не получили код подтверждения?
+        </a>
+    </p>
 </section>
 {% endblock %}

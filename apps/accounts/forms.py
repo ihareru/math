@@ -5,7 +5,6 @@ from django.contrib.auth.password_validation import (
 )
 from django.core.exceptions import ValidationError
 
-
 from .models import User
 
 
@@ -259,3 +258,151 @@ class LoginForm(
 
     def get_user(self):
         return self.user
+
+class ResumeRegistrationForm(
+    StyledFormMixin,
+    forms.Form,
+):
+    email = forms.EmailField(
+        label="Email",
+        widget=forms.EmailInput(
+            attrs={
+                "autocomplete": "email",
+                "placeholder": "name@example.com",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_styles()
+
+    def clean_email(self):
+        return (
+            self.cleaned_data["email"]
+            .strip()
+            .lower()
+        )
+
+
+class PasswordResetRequestForm(
+    StyledFormMixin,
+    forms.Form,
+):
+    email = forms.EmailField(
+        label="Email",
+        widget=forms.EmailInput(
+            attrs={
+                "autocomplete": "email",
+                "placeholder": "name@example.com",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_styles()
+
+    def clean_email(self):
+        return (
+            self.cleaned_data["email"]
+            .strip()
+            .lower()
+        )
+
+
+class SetNewPasswordForm(
+    StyledFormMixin,
+    forms.Form,
+):
+    password1 = forms.CharField(
+        label="Новый пароль",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "new-password",
+            }
+        ),
+    )
+
+    password2 = forms.CharField(
+        label="Повторите новый пароль",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "new-password",
+            }
+        ),
+    )
+
+    def __init__(
+        self,
+        *args,
+        user=None,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+
+        self.user = user
+        self.apply_styles()
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+
+        if not password1 or not password2:
+            return cleaned_data
+
+        if password1 != password2:
+            self.add_error(
+                "password2",
+                "Пароли не совпадают.",
+            )
+
+            return cleaned_data
+
+        try:
+            validate_password(
+                password1,
+                user=self.user,
+            )
+        except ValidationError as error:
+            self.add_error(
+                "password1",
+                error,
+            )
+
+        return cleaned_data
+
+
+class AccountProfileForm(
+    StyledFormMixin,
+    forms.ModelForm,
+):
+    class Meta:
+        model = User
+
+        fields = [
+            "display_name",
+            "show_in_rating",
+        ]
+
+        labels = {
+            "display_name": "Имя в рейтинге",
+            "show_in_rating": (
+                "Показывать меня в общем рейтинге"
+            ),
+        }
+
+        help_texts = {
+            "display_name": (
+                "Это имя будет видно другим пользователям "
+                "на публичной странице рейтинга."
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_styles()

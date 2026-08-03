@@ -35,6 +35,10 @@
                     <span>
                         {{ user.display_name }}
                     </span>
+                
+                    <a href="{% url 'accounts:account_detail' %}">
+                        Личный кабинет
+                    </a>
 
                     <form
                         action="{% url 'accounts:logout' %}"
