@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+Настройки пользователя — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <h1>Настройки пользователя</h1>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <ul class="form-errors">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="{{ form.background_color.id_for_label }}">
+                {{ form.background_color.label }}
+            </label>
+
+            {{ form.background_color }}
+
+            {% for error in form.background_color.errors %}
+                <div class="form-errors">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.background_image.id_for_label }}">
+                {{ form.background_image.label }}
+            </label>
+
+            {{ form.background_image }}
+
+            {% for error in form.background_image.errors %}
+                <div class="form-errors">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <fieldset class="settings-group">
+            <legend>Звуки</legend>
+
+            <label class="checkbox-row">
+                {{ form.background_music }}
+                {{ form.background_music.label }}
+            </label>
+
+            <label class="checkbox-row">
+                {{ form.success_sound }}
+                {{ form.success_sound.label }}
+            </label>
+
+            <label class="checkbox-row">
+                {{ form.fail_sound }}
+                {{ form.fail_sound.label }}
+            </label>
+        </fieldset>
+
+        <fieldset class="settings-group">
+            <legend>Громкость</legend>
+
+            <div class="form-group">
+                <label for="{{ form.background_volume.id_for_label }}">
+                    {{ form.background_volume.label }}
+                </label>
+
+                <div class="range-row">
+                    {{ form.background_volume }}
+
+                    <output
+                        id="background-volume-value"
+                    >
+                        {{ form.background_volume.value|default:50 }}
+                    </output>
+                </div>
+
+                {% for error in form.background_volume.errors %}
+                    <div class="form-errors">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.success_volume.id_for_label }}">
+                    {{ form.success_volume.label }}
+                </label>
+
+                <div class="range-row">
+                    {{ form.success_volume }}
+
+                    <output
+                        id="success-volume-value"
+                    >
+                        {{ form.success_volume.value|default:50 }}
+                    </output>
+                </div>
+
+                {% for error in form.success_volume.errors %}
+                    <div class="form-errors">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.fail_volume.id_for_label }}">
+                    {{ form.fail_volume.label }}
+                </label>
+
+                <div class="range-row">
+                    {{ form.fail_volume }}
+
+                    <output
+                        id="fail-volume-value"
+                    >
+                        {{ form.fail_volume.value|default:50 }}
+                    </output>
+                </div>
+
+                {% for error in form.fail_volume.errors %}
+                    <div class="form-errors">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button
+                class="button"
+                type="submit"
+            >
+                Сохранить
+            </button>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'accounts:account_detail' %}"
+            >
+                Вернуться в личный кабинет
+            </a>
+        </div>
+    </form>
+</section>
+
+    {% block extra_js %}
+        {{ block.super }}
+
+        <script src="{% static 'js/settings-preview.js' %}"></script>
+    {% endblock %}
+{% endblock %}

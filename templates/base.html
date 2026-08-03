@@ -15,12 +15,45 @@
     </title>
 
     <link
+        rel="icon"
+        type="image/x-icon"
+        href="{% static 'favicon.ico' %}"
+    >
+
+    <link
         rel="stylesheet"
         href="{% static 'css/main.css' %}"
     >
+
+    {% block extra_css %}
+    {% endblock %}
 </head>
 
-<body>
+<body
+    class="
+        site-body
+        {% if game_settings.background_image_url %}
+            site-body--has-background
+        {% endif %}
+    "
+    style="
+        --user-background-color:
+            {{ game_settings.background_color|default:'#87CEEB' }};
+
+        {% if game_settings.background_image_url %}
+            --user-background-image:
+                url('{{ game_settings.background_image_url }}');
+        {% else %}
+            --user-background-image: none;
+        {% endif %}
+    "
+    data-background-music-enabled="{% if game_settings.background_music %}1{% else %}0{% endif %}"
+    data-success-sound-enabled="{% if game_settings.success_sound %}1{% else %}0{% endif %}"
+    data-fail-sound-enabled="{% if game_settings.fail_sound %}1{% else %}0{% endif %}"
+    data-background-volume="{{ game_settings.background_volume|default:50 }}"
+    data-success-volume="{{ game_settings.success_volume|default:50 }}"
+    data-fail-volume="{{ game_settings.fail_volume|default:50 }}"
+>
     <header class="site-header">
         <div class="site-container site-header__content">
             <a
@@ -35,9 +68,13 @@
                     <span>
                         {{ user.display_name }}
                     </span>
-                
+
                     <a href="{% url 'accounts:account_detail' %}">
                         Личный кабинет
+                    </a>
+
+                    <a href="{% url 'user_settings:detail' %}">
+                        Настройки
                     </a>
 
                     <form
@@ -85,5 +122,41 @@
         {% block content %}
         {% endblock %}
     </main>
+
+    <audio
+        id="background-music"
+        preload="auto"
+        loop
+    >
+        <source
+            src="{% static 'music/background.mp3' %}"
+            type="audio/mpeg"
+        >
+    </audio>
+
+    <audio
+        id="success-sound"
+        preload="auto"
+    >
+        <source
+            src="{% static 'music/success.mp3' %}"
+            type="audio/mpeg"
+        >
+    </audio>
+
+    <audio
+        id="fail-sound"
+        preload="auto"
+    >
+        <source
+            src="{% static 'music/fail.mp3' %}"
+            type="audio/mpeg"
+        >
+    </audio>
+
+    <script src="{% static 'js/audio.js' %}"></script>
+
+    {% block extra_js %}
+    {% endblock %}
 </body>
 </html>

@@ -35,6 +35,7 @@ DJANGO_APPS = [
 LOCAL_APPS = [
     "apps.accounts.apps.AccountsConfig",
     "apps.dashboard.apps.DashboardConfig",
+    "apps.settings.apps.SettingsConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
@@ -67,6 +68,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.settings.context_processors.user_game_settings",
             ],
         },
     },

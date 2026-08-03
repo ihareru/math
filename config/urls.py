@@ -23,6 +23,13 @@ urlpatterns = [
             namespace="dashboard",
         ),
     ),
+    path(
+        "settings/",
+        include(
+            "apps.settings.urls",
+            namespace="user_settings",
+        ),
+    ),
 ]
 
 

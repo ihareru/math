@@ -29,7 +29,27 @@ body {
     min-height: 100vh;
     margin: 0;
     color: var(--text-color);
-    background: var(--page-background);
+}
+
+.site-body {
+    background-color: var(
+        --user-background-color,
+        #87ceeb
+    );
+
+    background-image: var(
+        --user-background-image,
+        none
+    );
+
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+.site-body--has-background {
+    min-height: 100vh;
 }
 
 a {
@@ -49,8 +69,9 @@ textarea {
 }
 
 .site-header {
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.94);
     border-bottom: 1px solid var(--border-color);
+    backdrop-filter: blur(8px);
 }
 
 .site-header__content {
@@ -95,9 +116,10 @@ textarea {
     width: min(100%, 680px);
     margin-inline: auto;
     padding: clamp(1.25rem, 4vw, 2.5rem);
-    background: var(--card-background);
+    background: rgba(255, 255, 255, 0.94);
     border-radius: 20px;
     box-shadow: var(--shadow);
+    backdrop-filter: blur(5px);
 }
 
 .page-card h1 {
@@ -247,4 +269,67 @@ textarea {
     margin: 0;
     font-size: 1.05rem;
     overflow-wrap: anywhere;
+}
+
+.settings-group {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.settings-group legend {
+    padding-inline: 0.5rem;
+    font-weight: 800;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-block: 0.75rem;
+}
+
+.checkbox-row input {
+    width: 20px;
+    height: 20px;
+}
+
+.form-control--color {
+    width: 100px;
+    height: 50px;
+    padding: 0.2rem;
+    cursor: pointer;
+}
+
+.range-row {
+    display: grid;
+    grid-template-columns: 1fr 60px;
+    align-items: center;
+    gap: 1rem;
+}
+
+.volume-range {
+    width: 100%;
+}
+
+.range-row output {
+    padding: 0.45rem;
+    text-align: center;
+    font-weight: 800;
+    background: #f1f5fb;
+    border-radius: 8px;
+}
+
+@media (max-width: 480px) {
+    .range-row {
+        grid-template-columns: 1fr 48px;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .site-body {
+        background-attachment: scroll;
+    }
 }
