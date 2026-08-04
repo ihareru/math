@@ -25,3 +25,5 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 CSRF_TRUSTED_ORIGINS = [
     "https://math.ihare.ru",
 ]
+
+ANALYTICS_TRUST_X_FORWARDED_FOR = True

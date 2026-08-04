@@ -31,6 +31,13 @@ urlpatterns = [
         ),
     ),
     path(
+        "analytics/",
+        include(
+            "apps.analytics.urls",
+            namespace="analytics",
+        ),
+    ),
+    path(
         "",
         include(
             "apps.dashboard.urls",

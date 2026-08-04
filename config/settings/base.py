@@ -37,6 +37,8 @@ LOCAL_APPS = [
     "apps.dashboard.apps.DashboardConfig",
     "apps.settings.apps.SettingsConfig",
     "apps.game.apps.GameConfig",
+    "apps.analytics.apps.AnalyticsConfig",
+
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
@@ -49,6 +51,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.analytics.middleware.AnalyticsMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -217,3 +220,19 @@ VERIFICATION_CODE_LIFETIME_MINUTES = 10
 VERIFICATION_CODE_RESEND_COOLDOWN_SECONDS = 60
 
 VERIFICATION_CODE_MAX_ATTEMPTS = 5
+
+ANALYTICS_ENABLED = True
+
+# В локальной разработке IP берём из REMOTE_ADDR.
+# На production Nginx передаёт реальный IP через X-Forwarded-For.
+ANALYTICS_TRUST_X_FORWARDED_FOR = False
+
+# Не обновлять last_activity_at чаще этого интервала.
+ANALYTICS_ACTIVITY_UPDATE_SECONDS = 60
+
+# Пути, которые не считаются пользовательской активностью.
+ANALYTICS_EXCLUDED_PATH_PREFIXES = [
+    "/static/",
+    "/media/",
+    "/favicon.ico",
+]

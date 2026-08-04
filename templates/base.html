@@ -36,6 +36,7 @@
             site-body--has-background
         {% endif %}
     "
+    data-authenticated-user="{% if user.is_authenticated %}1{% endif %}"
     style="
         --user-background-color:
             {{ game_settings.background_color|default:'#87CEEB' }};
@@ -155,6 +156,7 @@
     </audio>
 
     <script src="{% static 'js/audio.js' %}"></script>
+    <script src="{% static 'js/analytics.js' %}"></script>
 
     {% block extra_js %}
     {% endblock %}
