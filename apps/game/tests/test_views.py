@@ -206,3 +206,70 @@ class GameViewTests(TestCase):
                 status=GameSession.Status.ACTIVE,
             ).exists()
         )
+
+    def test_user_can_open_statistics_page(self):
+        response = self.client.get(
+            reverse("game:statistics")
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertContains(
+            response,
+            "Моя статистика",
+        )
+
+    def test_user_cannot_open_another_users_session(
+            self,
+    ):
+        other_user = User.objects.create_user(
+            email="other@example.com",
+            password=self.password,
+            display_name="Другой игрок",
+            email_verified=True,
+            is_active=True,
+        )
+
+        other_session = GameSession.objects.create(
+            user=other_user,
+            mode=GameSession.Mode.ADD,
+        )
+
+        response = self.client.get(
+            reverse(
+                "game:session_detail",
+                kwargs={
+                    "session_id": other_session.pk,
+                },
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            404,
+        )
+
+    def test_session_list_contains_users_session(
+            self,
+    ):
+        game_session = start_game_session(
+            user=self.user,
+            mode=GameSession.Mode.ADD,
+        )
+
+        response = self.client.get(
+            reverse("game:session_list")
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertContains(
+            response,
+            game_session.get_mode_display(),
+        )

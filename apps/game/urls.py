@@ -13,6 +13,21 @@ urlpatterns = [
         name="mode_select",
     ),
     path(
+        "statistics/",
+        views.statistics_dashboard,
+        name="statistics",
+    ),
+    path(
+        "sessions/",
+        views.session_list,
+        name="session_list",
+    ),
+    path(
+        "sessions/<int:session_id>/",
+        views.session_detail,
+        name="session_detail",
+    ),
+    path(
         "start/<str:mode>/",
         views.start,
         name="start",

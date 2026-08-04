@@ -9,6 +9,12 @@
     {% if user.is_authenticated %}
         <div class="form-actions">
             <a
+                class="button button--secondary"
+                href="{% url 'game:statistics' %}"
+            >
+                Моя статистика
+            </a>
+            <a
                 class="button"
                 href="{% url 'game:mode_select' %}"
             >

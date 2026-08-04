@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}
+Игровые сессии — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="page-card history-page">
+    <div class="statistics-section__header">
+        <h1>Игровые сессии</h1>
+
+        <a
+            class="button button--secondary"
+            href="{% url 'game:statistics' %}"
+        >
+            Общая статистика
+        </a>
+    </div>
+
+    {% if page_obj %}
+        <div class="session-table-wrapper">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Начало</th>
+                        <th>Режим</th>
+                        <th>Статус</th>
+                        <th>Правильно</th>
+                        <th>Ошибок</th>
+                        <th>Точность</th>
+                        <th>Лучшая серия</th>
+                        <th>Звёзды</th>
+                        <th>Длительность</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for session in page_obj %}
+                        <tr>
+                            <td>
+                                <a
+                                    href="{% url 'game:session_detail' session.pk %}"
+                                >
+                                    {{ session.started_at|date:"d.m.Y H:i" }}
+                                </a>
+                            </td>
+
+                            <td>
+                                {{ session.get_mode_display }}
+                            </td>
+
+                            <td>
+                                {{ session.get_status_display }}
+                            </td>
+
+                            <td>
+                                {{ session.correct_count }}
+                            </td>
+
+                            <td>
+                                {{ session.wrong_count }}
+                            </td>
+
+                            <td>
+                                {{ session.accuracy_percent }}%
+                            </td>
+
+                            <td>
+                                {{ session.best_streak }}
+                            </td>
+
+                            <td>
+                                {{ session.stars_earned }}
+                            </td>
+
+                            <td>
+                                {{ session.duration_minutes }}
+                                мин.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "game/_pagination.html" %}
+    {% else %}
+        <p>
+            Игровых сессий пока нет.
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

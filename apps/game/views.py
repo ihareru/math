@@ -2,12 +2,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import (
     login_required,
 )
+from django.core.paginator import Paginator
 from django.http import Http404
 from django.shortcuts import (
     get_object_or_404,
     redirect,
     render,
 )
+from django.db.models import Avg, Q
 from django.views.decorators.http import (
     require_POST,
 )
@@ -32,6 +34,9 @@ from .services.review import (
     count_unresolved_wrong_questions,
     get_or_create_review_question,
     start_review_session,
+)
+from .services.statistics import (
+    get_statistics_dashboard_data,
 )
 
 
@@ -357,3 +362,95 @@ def start_review(request):
         return redirect("game:mode_select")
 
     return redirect("game:play")
+
+@login_required
+def statistics_dashboard(request):
+    context = get_statistics_dashboard_data(
+        user=request.user,
+    )
+
+    return render(
+        request,
+        "game/statistics_dashboard.html",
+        context,
+    )
+
+@login_required
+def session_list(request):
+    sessions = (
+        GameSession.objects
+        .filter(user=request.user)
+        .annotate(
+            average_response_time_ms=Avg(
+                "questions__response_time_ms",
+                filter=Q(
+                    questions__answered_at__isnull=False
+                ),
+            )
+        )
+        .order_by("-started_at")
+    )
+
+    paginator = Paginator(
+        sessions,
+        20,
+    )
+
+    page = paginator.get_page(
+        request.GET.get("page")
+    )
+
+    return render(
+        request,
+        "game/session_list.html",
+        {
+            "page_obj": page,
+        },
+    )
+
+@login_required
+def session_detail(
+    request,
+    session_id,
+):
+    game_session = get_object_or_404(
+        GameSession.objects.annotate(
+            average_response_time_ms=Avg(
+                "questions__response_time_ms",
+                filter=Q(
+                    questions__answered_at__isnull=False
+                ),
+            )
+        ),
+        pk=session_id,
+        user=request.user,
+    )
+
+    questions = (
+        game_session.questions
+        .filter(
+            answered_at__isnull=False,
+        )
+        .select_related(
+            "source_question",
+        )
+        .order_by("sequence_number")
+    )
+
+    paginator = Paginator(
+        questions,
+        25,
+    )
+
+    page = paginator.get_page(
+        request.GET.get("page")
+    )
+
+    return render(
+        request,
+        "game/session_detail.html",
+        {
+            "game_session": game_session,
+            "page_obj": page,
+        },
+    )

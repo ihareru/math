@@ -245,6 +245,65 @@ class GameSession(models.Model):
             ]
         )
 
+    @property
+    def end_time(self):
+        return (
+                self.finished_at
+                or self.last_activity_at
+        )
+
+    @property
+    def duration_seconds(self):
+        if not self.started_at:
+            return 0
+
+        duration = (
+                self.end_time - self.started_at
+        )
+
+        return max(
+            0,
+            round(
+                duration.total_seconds(),
+            ),
+        )
+
+    @property
+    def duration_minutes(self):
+        return round(
+            self.duration_seconds / 60,
+            1,
+        )
+
+    @property
+    def average_response_time_seconds(self):
+        annotated_value = getattr(
+            self,
+            "average_response_time_ms",
+            None,
+        )
+
+        if annotated_value is None:
+            average_ms = (
+                    self.questions
+                    .filter(
+                        answered_at__isnull=False,
+                    )
+                    .aggregate(
+                        value=models.Avg(
+                            "response_time_ms"
+                        )
+                    )["value"]
+                    or 0
+            )
+        else:
+            average_ms = annotated_value or 0
+
+        return round(
+            average_ms / 1000,
+            2,
+        )
+    
 
 class GameQuestion(models.Model):
     """

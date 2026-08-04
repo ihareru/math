@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}
+Статистика — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="statistics-page">
+    <div class="statistics-page__header">
+        <div>
+            <h1>Моя статистика</h1>
+
+            <p>
+                Общие результаты за всё время.
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a
+                class="button"
+                href="{% url 'game:mode_select' %}"
+            >
+                Играть
+            </a>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'game:session_list' %}"
+            >
+                Все сессии
+            </a>
+        </div>
+    </div>
+
+    <section class="statistics-summary">
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ statistics.stars }}
+            </span>
+
+            <span class="statistics-card__label">
+                Звёзд
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ statistics.total_answers }}
+            </span>
+
+            <span class="statistics-card__label">
+                Всего ответов
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ statistics.total_correct }}
+            </span>
+
+            <span class="statistics-card__label">
+                Правильных
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ statistics.total_wrong }}
+            </span>
+
+            <span class="statistics-card__label">
+                Ошибок
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ statistics.accuracy_percent }}%
+            </span>
+
+            <span class="statistics-card__label">
+                Точность
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ statistics.best_streak }}
+            </span>
+
+            <span class="statistics-card__label">
+                Лучшая серия
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ statistics.average_answer_time_seconds }}
+            </span>
+
+            <span class="statistics-card__label">
+                Среднее время, сек.
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ statistics.total_sessions }}
+            </span>
+
+            <span class="statistics-card__label">
+                Игровых сессий
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ unresolved_errors_count }}
+            </span>
+
+            <span class="statistics-card__label">
+                Неразобранных ошибок
+            </span>
+        </article>
+    </section>
+
+    <section class="statistics-section">
+        <div class="statistics-section__header">
+            <h2>Результаты по действиям</h2>
+        </div>
+
+        <div class="operation-statistics-grid">
+            {% for item in operation_statistics %}
+                <article class="operation-statistics-card">
+                    <div class="operation-statistics-card__symbol">
+                        {{ item.symbol }}
+                    </div>
+
+                    <h3>{{ item.title }}</h3>
+
+                    <dl>
+                        <div>
+                            <dt>Всего</dt>
+                            <dd>{{ item.total_count }}</dd>
+                        </div>
+
+                        <div>
+                            <dt>Правильно</dt>
+                            <dd>{{ item.correct_count }}</dd>
+                        </div>
+
+                        <div>
+                            <dt>Ошибок</dt>
+                            <dd>{{ item.wrong_count }}</dd>
+                        </div>
+
+                        <div>
+                            <dt>Точность</dt>
+                            <dd>
+                                {{ item.accuracy_percent }}%
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>Среднее время</dt>
+                            <dd>
+                                {{ item.average_response_time_seconds }}
+                                сек.
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <div class="accuracy-progress">
+                        <div
+                            class="accuracy-progress__value"
+                            style="
+                                width:
+                                {{ item.accuracy_percent }}%;
+                            "
+                        ></div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="statistics-section">
+        <div class="statistics-section__header">
+            <h2>Последние 30 дней</h2>
+        </div>
+
+        {% if daily_statistics %}
+            <div class="daily-statistics-list">
+                {% for day in daily_statistics %}
+                    <article class="daily-statistics-item">
+                        <div>
+                            <strong>
+                                {{ day.date|date:"d.m.Y" }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            Всего:
+                            <strong>
+                                {{ day.total_count }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            Правильно:
+                            <strong>
+                                {{ day.correct_count }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            Ошибок:
+                            <strong>
+                                {{ day.wrong_count }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            Точность:
+                            <strong>
+                                {{ day.accuracy_percent }}%
+                            </strong>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>
+                За последние 30 дней пока нет ответов.
+            </p>
+        {% endif %}
+    </section>
+
+    <section class="statistics-section">
+        <div class="statistics-section__header">
+            <h2>Частые ошибки</h2>
+
+            {% if unresolved_errors_count %}
+                <form
+                    action="{% url 'game:start_review' %}"
+                    method="post"
+                >
+                    {% csrf_token %}
+
+                    <button
+                        class="button"
+                        type="submit"
+                    >
+                        Повторить ошибки
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+        {% if frequent_errors %}
+            <div class="frequent-errors-list">
+                {% for error in frequent_errors %}
+                    <article class="frequent-error-item">
+                        <span class="frequent-error-item__expression">
+                            {{ error.expression }}
+                        </span>
+
+                        <span>
+                            Правильный ответ:
+                            <strong>
+                                {{ error.correct_answer }}
+                            </strong>
+                        </span>
+
+                        <span>
+                            Ошибок:
+                            <strong>
+                                {{ error.error_count }}
+                            </strong>
+                        </span>
+
+                        <span>
+                            Последняя:
+                            {{ error.latest_error_at|date:"d.m.Y H:i" }}
+                        </span>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>
+                Ошибок пока нет.
+            </p>
+        {% endif %}
+    </section>
+
+    <section class="statistics-section">
+        <div class="statistics-section__header">
+            <h2>Последние игровые сессии</h2>
+
+            <a href="{% url 'game:session_list' %}">
+                Посмотреть все
+            </a>
+        </div>
+
+        {% if recent_sessions %}
+            <div class="session-list">
+                {% for session in recent_sessions %}
+                    <a
+                        class="session-list-item"
+                        href="{% url 'game:session_detail' session.pk %}"
+                    >
+                        <div>
+                            <strong>
+                                {{ session.get_mode_display }}
+                            </strong>
+
+                            <span>
+                                {{ session.started_at|date:"d.m.Y H:i" }}
+                            </span>
+                        </div>
+
+                        <div>
+                            {{ session.correct_count }}
+                            правильных
+                        </div>
+
+                        <div>
+                            {{ session.wrong_count }}
+                            ошибок
+                        </div>
+
+                        <div>
+                            {{ session.accuracy_percent }}%
+                        </div>
+
+                        <div>
+                            {{ session.stars_earned }}
+                            зв.
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>
+                Игровых сессий пока нет.
+            </p>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}
