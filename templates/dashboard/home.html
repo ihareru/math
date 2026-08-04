@@ -1,62 +1,316 @@
 {% extends "base.html" %}
 
-{% block title %}Math Game{% endblock %}
+{% block title %}
+Math Game — математическая игра
+{% endblock %}
 
 {% block content %}
-<section class="page-card">
-    <h1>Математическая игра</h1>
+<section class="dashboard-hero">
+    <div class="dashboard-hero__content">
+        <div>
+            <h1>Математическая игра</h1>
 
-    {% if user.is_authenticated %}
-        <div class="form-actions">
+            <p>
+                Решайте примеры, улучшайте результат,
+                зарабатывайте звёзды и поднимайтесь
+                в общем рейтинге.
+            </p>
+        </div>
+
+        <div class="dashboard-hero__actions">
+            {% if user.is_authenticated %}
+                <a
+                    class="button"
+                    href="{% url 'game:mode_select' %}"
+                >
+                    Начать игру
+                </a>
+
+                <a
+                    class="button button--secondary"
+                    href="{% url 'game:statistics' %}"
+                >
+                    Моя статистика
+                </a>
+
+                <a
+                    class="button button--secondary"
+                    href="{% url 'accounts:account_detail' %}"
+                >
+                    Личный кабинет
+                </a>
+            {% else %}
+                <a
+                    class="button"
+                    href="{% url 'accounts:register' %}"
+                >
+                    Зарегистрироваться
+                </a>
+
+                <a
+                    class="button button--secondary"
+                    href="{% url 'accounts:login' %}"
+                >
+                    Войти
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="public-summary">
+    <article class="public-summary-card">
+        <span class="public-summary-card__value">
+            {{ rating_summary.registered_users }}
+        </span>
+
+        <span class="public-summary-card__label">
+            зарегистрированных игроков
+        </span>
+    </article>
+
+    <article class="public-summary-card">
+        <span class="public-summary-card__value">
+            {{ rating_summary.rating_participants }}
+        </span>
+
+        <span class="public-summary-card__label">
+            участников рейтинга
+        </span>
+    </article>
+
+    <article class="public-summary-card">
+        <span class="public-summary-card__value">
+            {{ rating_summary.total_stars }}
+        </span>
+
+        <span class="public-summary-card__label">
+            заработано звёзд
+        </span>
+    </article>
+
+    <article class="public-summary-card">
+        <span class="public-summary-card__value">
+            {{ rating_summary.total_correct_answers }}
+        </span>
+
+        <span class="public-summary-card__label">
+            правильных ответов
+        </span>
+    </article>
+</section>
+
+{% if user.is_authenticated %}
+    {% if current_user_rating %}
+        <section class="current-rating-card">
+            <div>
+                <span>Ваше место</span>
+
+                <strong>
+                    {{ current_user_rating.rank }}
+                </strong>
+            </div>
+
+            <div>
+                <span>Ваши звёзды</span>
+
+                <strong>
+                    {{ current_user_rating.stars }}
+                </strong>
+            </div>
+
+            <div>
+                <span>Точность</span>
+
+                <strong>
+                    {{ current_user_rating.accuracy_percent }}%
+                </strong>
+            </div>
+
             <a
                 class="button button--secondary"
                 href="{% url 'game:statistics' %}"
             >
-                Моя статистика
+                Подробнее
             </a>
+        </section>
+    {% elif user.show_in_rating %}
+        <section class="rating-information">
+            <p>
+                Ваша запись пока не появилась
+                в рейтинге. Попробуйте обновить страницу
+                после первой игры.
+            </p>
+        </section>
+    {% else %}
+        <section class="rating-information">
+            <p>
+                Вы отключили участие в публичном рейтинге.
+                Ваши результаты видны только вам.
+            </p>
+
             <a
-                class="button"
+                href="{% url 'accounts:account_edit' %}"
+            >
+                Изменить настройки профиля
+            </a>
+        </section>
+    {% endif %}
+{% endif %}
+
+<section class="public-rating">
+    <div class="public-rating__header">
+        <div>
+            <h2>Общий рейтинг</h2>
+
+            <p>
+                Рейтинг формируется по общему количеству
+                заработанных звёзд.
+            </p>
+        </div>
+
+        {% if user.is_authenticated %}
+            <a
+                class="button button--secondary"
                 href="{% url 'game:mode_select' %}"
             >
-                Начать игру
+                Заработать звёзды
             </a>
+        {% endif %}
+    </div>
 
-            <a
-                class="button button--secondary"
-                href="{% url 'game:history' %}"
-            >
-                История примеров
-            </a>
+    {% if page_obj.object_list %}
+        <div class="public-rating-table-wrapper">
+            <table class="public-rating-table">
+                <thead>
+                    <tr>
+                        <th>Место</th>
+                        <th>Игрок</th>
+                        <th>Звёзды</th>
+                        <th>Правильных</th>
+                        <th>Лучшая серия</th>
+                        <th>Точность</th>
+                    </tr>
+                </thead>
 
-            <a
-                class="button button--secondary"
-                href="{% url 'accounts:account_detail' %}"
-            >
-                Личный кабинет
-            </a>
+                <tbody>
+                    {% for row in page_obj %}
+                        <tr
+                            {% if user.is_authenticated %}
+                                {% if row.user_id == user.pk %}
+                                    class="public-rating-row--current"
+                                {% endif %}
+                            {% endif %}
+                        >
+                            <td>
+                                <span
+                                    class="
+                                        rating-position
+                                        {% if row.rank == 1 %}
+                                            rating-position--gold
+                                        {% elif row.rank == 2 %}
+                                            rating-position--silver
+                                        {% elif row.rank == 3 %}
+                                            rating-position--bronze
+                                        {% endif %}
+                                    "
+                                >
+                                    {{ row.rank }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ row.display_name }}
+                                </strong>
+
+                                {% if user.is_authenticated %}
+                                    {% if row.user_id == user.pk %}
+                                        <span class="current-user-badge">
+                                            Это вы
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <strong>
+                                    {{ row.stars }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ row.total_correct }}
+                            </td>
+
+                            <td>
+                                {{ row.best_streak }}
+                            </td>
+
+                            <td>
+                                {{ row.accuracy_percent }}%
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <p>
-            Вы вошли как
-            <strong>{{ user.display_name }}</strong>.
-        </p>
 
-        <p>
-            <a href="{% url 'accounts:logout' %}">
-                Выйти
-            </a>
-        </p>
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav
+                class="pagination"
+                aria-label="Страницы рейтинга"
+            >
+                {% if page_obj.has_previous %}
+                    <a
+                        class="pagination__link"
+                        href="?page=1"
+                    >
+                        Первая
+                    </a>
+
+                    <a
+                        class="pagination__link"
+                        href="?page={{ page_obj.previous_page_number }}"
+                    >
+                        Назад
+                    </a>
+                {% endif %}
+
+                <span class="pagination__current">
+                    Страница
+                    {{ page_obj.number }}
+                    из
+                    {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a
+                        class="pagination__link"
+                        href="?page={{ page_obj.next_page_number }}"
+                    >
+                        Далее
+                    </a>
+
+                    <a
+                        class="pagination__link"
+                        href="?page={{ page_obj.paginator.num_pages }}"
+                    >
+                        Последняя
+                    </a>
+                {% endif %}
+            </nav>
+        {% endif %}
     {% else %}
-        <p>
-            <a href="{% url 'accounts:register' %}">
-                Зарегистрироваться
-            </a>
-        </p>
+        <div class="empty-rating">
+            <h3>Рейтинг пока пуст</h3>
 
-        <p>
-            <a href="{% url 'accounts:login' %}">
-                Войти
-            </a>
-        </p>
+            <p>
+                Первый подтверждённый пользователь,
+                разрешивший участие в рейтинге,
+                появится здесь.
+            </p>
+        </div>
     {% endif %}
 </section>
 {% endblock %}
