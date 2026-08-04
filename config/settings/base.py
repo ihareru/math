@@ -36,6 +36,7 @@ LOCAL_APPS = [
     "apps.accounts.apps.AccountsConfig",
     "apps.dashboard.apps.DashboardConfig",
     "apps.settings.apps.SettingsConfig",
+    "apps.game.apps.GameConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
