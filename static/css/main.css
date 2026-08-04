@@ -333,3 +333,337 @@ textarea {
         background-attachment: scroll;
     }
 }
+
+.game-mode-page {
+    width: min(100%, 900px);
+}
+
+.game-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(150px, 1fr)
+    );
+    gap: 1rem;
+    margin-block: 2rem;
+}
+
+.game-mode-grid form {
+    margin: 0;
+}
+
+.game-mode-card {
+    width: 100%;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    color: var(--text-color);
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.game-mode-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow);
+}
+
+.game-mode-card__symbol {
+    font-size: clamp(2.5rem, 7vw, 4rem);
+    font-weight: 900;
+}
+
+.game-mode-card__title {
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.game-summary {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(120px, 1fr)
+    );
+    gap: 0.75rem;
+    margin-block: 1.5rem;
+}
+
+.game-summary div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.9rem;
+    background: #f7f9fd;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.game-summary strong {
+    font-size: 1.5rem;
+}
+
+.game-summary span {
+    color: var(--muted-color);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.game-summary--compact {
+    margin-block: 1rem;
+}
+
+.active-session-notice {
+    padding: 1rem;
+    background: #edf4ff;
+    border: 1px solid #c8dafe;
+    border-radius: 12px;
+}
+
+.game-layout {
+    width: min(100%, 950px);
+    margin-inline: auto;
+    display: grid;
+    gap: 1.25rem;
+}
+
+.game-card,
+.game-result-card {
+    width: 100%;
+}
+
+.game-status {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: var(--muted-color);
+}
+
+.game-question,
+.game-result-expression {
+    margin-block: 2rem;
+    font-size: clamp(3rem, 12vw, 7rem);
+    font-weight: 900;
+    line-height: 1.1;
+    text-align: center;
+}
+
+.game-answer-form {
+    width: min(100%, 520px);
+    margin-inline: auto;
+}
+
+.game-answer-field {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+}
+
+.game-answer-input {
+    width: 100%;
+    min-width: 0;
+    padding: 0.8rem;
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    font-weight: 800;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.game-answer-input:focus {
+    border-color: var(--primary-color);
+    outline: 4px solid rgba(37, 99, 235, 0.15);
+}
+
+.game-submit-button {
+    min-width: 130px;
+}
+
+.game-finish-form {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.game-result-card {
+    text-align: center;
+}
+
+.game-result-card--correct {
+    border: 3px solid #39a66a;
+}
+
+.game-result-card--wrong {
+    border: 3px solid #d64545;
+}
+
+.game-result-title {
+    margin-bottom: 0.75rem;
+    font-size: clamp(2rem, 7vw, 3.5rem);
+}
+
+.game-result-card--correct .game-result-title {
+    color: var(--success-color);
+}
+
+.game-result-card--wrong .game-result-title {
+    color: var(--danger-color);
+}
+
+.correct-answer-display {
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+}
+
+.correct-answer-display strong {
+    color: var(--success-color);
+}
+
+.star-award-message {
+    font-size: 1.5rem;
+    font-weight: 900;
+}
+
+.response-time {
+    color: var(--muted-color);
+}
+
+.recent-questions {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+
+.recent-questions__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.recent-questions__header h1,
+.recent-questions__header h2 {
+    margin: 0;
+}
+
+.question-history-list {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.question-history-item {
+    display: grid;
+    grid-template-columns:
+        minmax(100px, 1fr)
+        minmax(120px, 1fr)
+        minmax(120px, 1fr)
+        32px;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    color: var(--text-color);
+    background: #f7f9fd;
+    border-left: 5px solid var(--border-color);
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.question-history-item--correct {
+    border-left-color: var(--success-color);
+}
+
+.question-history-item--wrong {
+    border-left-color: var(--danger-color);
+}
+
+.question-history-item__number {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+.question-history-item__result {
+    font-size: 1.25rem;
+    font-weight: 900;
+    text-align: center;
+}
+
+.question-history-item--correct
+.question-history-item__result {
+    color: var(--success-color);
+}
+
+.question-history-item--wrong
+.question-history-item__result {
+    color: var(--danger-color);
+}
+
+.history-page {
+    width: min(100%, 1100px);
+}
+
+.history-table-wrapper {
+    margin-top: 1.5rem;
+    overflow-x: auto;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.history-table th {
+    background: #f1f5fb;
+}
+
+.history-correct {
+    color: var(--success-color);
+    font-weight: 800;
+}
+
+.history-wrong {
+    color: var(--danger-color);
+    font-weight: 800;
+}
+
+@media (max-width: 700px) {
+    .game-answer-field {
+        grid-template-columns: 1fr;
+    }
+
+    .game-submit-button {
+        width: 100%;
+    }
+
+    .question-history-item {
+        grid-template-columns: 1fr 32px;
+    }
+
+    .question-history-item > span:not(
+        .question-history-item__number,
+        .question-history-item__result
+    ) {
+        grid-column: 1 / -1;
+    }
+
+    .game-status {
+        flex-direction: column;
+    }
+}

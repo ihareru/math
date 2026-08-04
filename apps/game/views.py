@@ -1,3 +1,293 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.contrib.auth.decorators import (
+    login_required,
+)
+from django.http import Http404
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+    render,
+)
+from django.views.decorators.http import (
+    require_POST,
+)
 
-# Create your views here.
+from .forms import AnswerForm
+from .models import (
+    GameQuestion,
+    GameSession,
+    UserGameStatistics,
+)
+from .services.exceptions import GameServiceError
+from .services.gameplay import (
+    finish_active_session,
+    get_active_session,
+    get_or_create_current_question,
+    get_recent_answered_questions,
+    start_game_session,
+    submit_answer,
+)
+
+
+ALLOWED_GAME_MODES = {
+    GameSession.Mode.ADD,
+    GameSession.Mode.SUB,
+    GameSession.Mode.MUL,
+    GameSession.Mode.DIV,
+    GameSession.Mode.ALL,
+}
+
+
+@login_required
+def mode_select(request):
+    statistics, _ = (
+        UserGameStatistics.objects.get_or_create(
+            user=request.user,
+        )
+    )
+
+    active_session = get_active_session(
+        user=request.user,
+    )
+
+    return render(
+        request,
+        "game/mode_select.html",
+        {
+            "modes": [
+                {
+                    "value": GameSession.Mode.ADD,
+                    "title": "Сложение",
+                    "symbol": "+",
+                },
+                {
+                    "value": GameSession.Mode.SUB,
+                    "title": "Вычитание",
+                    "symbol": "−",
+                },
+                {
+                    "value": GameSession.Mode.MUL,
+                    "title": "Умножение",
+                    "symbol": "×",
+                },
+                {
+                    "value": GameSession.Mode.DIV,
+                    "title": "Деление",
+                    "symbol": ":",
+                },
+                {
+                    "value": GameSession.Mode.ALL,
+                    "title": "Все действия",
+                    "symbol": "±",
+                },
+            ],
+            "statistics": statistics,
+            "active_session": active_session,
+        },
+    )
+
+
+@login_required
+@require_POST
+def start(request, mode):
+    if mode not in ALLOWED_GAME_MODES:
+        raise Http404(
+            "Неизвестный игровой режим."
+        )
+
+    start_game_session(
+        user=request.user,
+        mode=mode,
+    )
+
+    return redirect("game:play")
+
+
+@login_required
+def play(request):
+    try:
+        question = get_or_create_current_question(
+            user=request.user,
+        )
+    except GameServiceError:
+        messages.warning(
+            request,
+            "Сначала выберите режим игры.",
+        )
+
+        return redirect("game:mode_select")
+
+    game_session = question.session
+
+    recent_questions = (
+        get_recent_answered_questions(
+            user=request.user,
+            limit=10,
+        )
+    )
+
+    return render(
+        request,
+        "game/play.html",
+        {
+            "question": question,
+            "game_session": game_session,
+            "form": AnswerForm(),
+            "recent_questions": recent_questions,
+        },
+    )
+
+
+@login_required
+@require_POST
+def answer(request, question_id):
+    question = get_object_or_404(
+        GameQuestion,
+        pk=question_id,
+        session__user=request.user,
+    )
+
+    form = AnswerForm(request.POST)
+
+    if not form.is_valid():
+        recent_questions = (
+            get_recent_answered_questions(
+                user=request.user,
+                limit=10,
+            )
+        )
+
+        return render(
+            request,
+            "game/play.html",
+            {
+                "question": question,
+                "game_session": question.session,
+                "form": form,
+                "recent_questions": recent_questions,
+            },
+            status=400,
+        )
+
+    try:
+        submit_answer(
+            user=request.user,
+            question_id=question.pk,
+            user_answer=form.cleaned_data[
+                "answer"
+            ],
+        )
+    except GameServiceError as error:
+        messages.warning(
+            request,
+            str(error),
+        )
+
+    return redirect(
+        "game:question_result",
+        question_id=question.pk,
+    )
+
+
+@login_required
+def question_result(
+    request,
+    question_id,
+):
+    question = get_object_or_404(
+        GameQuestion.objects.select_related(
+            "session",
+        ),
+        pk=question_id,
+        session__user=request.user,
+        answered_at__isnull=False,
+    )
+
+    recent_questions = (
+        get_recent_answered_questions(
+            user=request.user,
+            limit=10,
+        )
+    )
+
+    statistics, _ = (
+        UserGameStatistics.objects.get_or_create(
+            user=request.user,
+        )
+    )
+
+    return render(
+        request,
+        "game/question_result.html",
+        {
+            "question": question,
+            "game_session": question.session,
+            "statistics": statistics,
+            "recent_questions": recent_questions,
+        },
+    )
+
+
+@login_required
+@require_POST
+def next_question(request):
+    if get_active_session(
+        user=request.user,
+    ) is None:
+        messages.warning(
+            request,
+            "Активная игровая сессия не найдена.",
+        )
+
+        return redirect("game:mode_select")
+
+    return redirect("game:play")
+
+
+@login_required
+@require_POST
+def finish(request):
+    try:
+        game_session = finish_active_session(
+            user=request.user,
+        )
+    except GameServiceError:
+        messages.warning(
+            request,
+            "Активная игровая сессия не найдена.",
+        )
+
+        return redirect("game:mode_select")
+
+    messages.success(
+        request,
+        (
+            "Игровая сессия завершена. "
+            f"Правильных ответов: "
+            f"{game_session.correct_count}, "
+            f"ошибок: {game_session.wrong_count}."
+        ),
+    )
+
+    return redirect("game:mode_select")
+
+
+@login_required
+def history(request):
+    questions = (
+        GameQuestion.objects
+        .filter(
+            session__user=request.user,
+            answered_at__isnull=False,
+        )
+        .select_related("session")
+        .order_by("-answered_at")
+    )
+
+    return render(
+        request,
+        "game/history.html",
+        {
+            "questions": questions[:100],
+        },
+    )

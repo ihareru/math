@@ -7,6 +7,28 @@
     <h1>Математическая игра</h1>
 
     {% if user.is_authenticated %}
+        <div class="form-actions">
+            <a
+                class="button"
+                href="{% url 'game:mode_select' %}"
+            >
+                Начать игру
+            </a>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'game:history' %}"
+            >
+                История примеров
+            </a>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'accounts:account_detail' %}"
+            >
+                Личный кабинет
+            </a>
+        </div>
         <p>
             Вы вошли как
             <strong>{{ user.display_name }}</strong>.

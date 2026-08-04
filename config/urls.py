@@ -17,19 +17,27 @@ urlpatterns = [
         ),
     ),
     path(
-        "",
-        include(
-            "apps.dashboard.urls",
-            namespace="dashboard",
-        ),
-    ),
-    path(
         "settings/",
         include(
             "apps.settings.urls",
             namespace="user_settings",
         ),
     ),
+    path(
+        "game/",
+        include(
+            "apps.game.urls",
+            namespace="game",
+        ),
+    ),
+    path(
+        "",
+        include(
+            "apps.dashboard.urls",
+            namespace="dashboard",
+        ),
+    ),
+
 ]
 
 

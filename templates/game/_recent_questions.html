@@ -1,0 +1,57 @@
+<section class="recent-questions">
+    <div class="recent-questions__header">
+        <h2>Последние примеры</h2>
+
+        <a href="{% url 'game:history' %}">
+            Показать историю
+        </a>
+    </div>
+
+    {% if recent_questions %}
+        <div class="question-history-list">
+            {% for item in recent_questions %}
+                <a
+                    class="
+                        question-history-item
+                        {% if item.is_correct %}
+                            question-history-item--correct
+                        {% else %}
+                            question-history-item--wrong
+                        {% endif %}
+                    "
+                    href="{% url 'game:question_result' item.pk %}"
+                >
+                    <span class="question-history-item__number">
+                        {{ item.expression }}
+                    </span>
+
+                    <span>
+                        Ваш ответ:
+                        <strong>{{ item.user_answer }}</strong>
+                    </span>
+
+                    {% if not item.is_correct %}
+                        <span>
+                            Правильный:
+                            <strong>
+                                {{ item.correct_answer }}
+                            </strong>
+                        </span>
+                    {% endif %}
+
+                    <span class="question-history-item__result">
+                        {% if item.is_correct %}
+                            ✓
+                        {% else %}
+                            ✕
+                        {% endif %}
+                    </span>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>
+            Решённые примеры появятся здесь.
+        </p>
+    {% endif %}
+</section>

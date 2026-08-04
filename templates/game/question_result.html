@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}
+Результат — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="game-layout">
+    <div
+        class="
+            page-card
+            game-result-card
+            {% if question.is_correct %}
+                game-result-card--correct
+            {% else %}
+                game-result-card--wrong
+            {% endif %}
+        "
+    >
+        <div class="game-result-expression">
+            {{ question.expression }}
+            =
+            {{ question.user_answer }}
+        </div>
+
+        {% if question.is_correct %}
+            <h1 class="game-result-title">
+                Правильно!
+            </h1>
+
+            <p class="game-result-description">
+                Текущая серия:
+                <strong>
+                    {{ game_session.current_streak }}
+                </strong>
+            </p>
+
+            {% if game_session.current_streak %}
+                {% if game_session.current_streak|divisibleby:10 %}
+                    <p class="star-award-message">
+                        Получена новая звезда!
+                    </p>
+                {% endif %}
+            {% endif %}
+        {% else %}
+            <h1 class="game-result-title">
+                Неверно
+            </h1>
+
+            <p class="correct-answer-display">
+                Правильный ответ:
+                <strong>
+                    {{ question.correct_answer }}
+                </strong>
+            </p>
+
+            <p>
+                Серия правильных ответов начнётся заново.
+            </p>
+        {% endif %}
+
+        <p class="response-time">
+            Время ответа:
+            {{ question.response_time_seconds }} сек.
+        </p>
+
+        <div class="game-summary game-summary--compact">
+            <div>
+                <strong>
+                    {{ game_session.correct_count }}
+                </strong>
+                <span>правильных</span>
+            </div>
+
+            <div>
+                <strong>
+                    {{ game_session.wrong_count }}
+                </strong>
+                <span>ошибок</span>
+            </div>
+
+            <div>
+                <strong>
+                    {{ statistics.stars }}
+                </strong>
+                <span>всего звёзд</span>
+            </div>
+        </div>
+
+        {% if game_session.status == "active" %}
+            <form
+                action="{% url 'game:next_question' %}"
+                method="post"
+                class="form-actions"
+            >
+                {% csrf_token %}
+
+                <button
+                    class="button"
+                    type="submit"
+                    autofocus
+                >
+                    Следующий пример
+                </button>
+            </form>
+        {% else %}
+            <div class="form-actions">
+                <a
+                    class="button"
+                    href="{% url 'game:mode_select' %}"
+                >
+                    Выбрать режим
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% include "game/_recent_questions.html" %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+
+    <script>
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+                if (!window.MathGameAudio) {
+                    return;
+                }
+
+                {% if question.is_correct %}
+                    window.MathGameAudio.playSuccess();
+                {% else %}
+                    window.MathGameAudio.playFail();
+                {% endif %}
+            }
+        );
+    </script>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}
+История примеров — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="page-card history-page">
+    <div class="recent-questions__header">
+        <h1>История примеров</h1>
+
+        <a href="{% url 'game:mode_select' %}">
+            Вернуться к игре
+        </a>
+    </div>
+
+    {% if questions %}
+        <div class="history-table-wrapper">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Режим</th>
+                        <th>Пример</th>
+                        <th>Ваш ответ</th>
+                        <th>Правильный</th>
+                        <th>Результат</th>
+                        <th>Время</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for question in questions %}
+                        <tr>
+                            <td>
+                                {{ question.answered_at|date:"d.m.Y H:i" }}
+                            </td>
+
+                            <td>
+                                {{ question.session.get_mode_display }}
+                            </td>
+
+                            <td>
+                                <a
+                                    href="{% url 'game:question_result' question.pk %}"
+                                >
+                                    {{ question.expression }}
+                                </a>
+                            </td>
+
+                            <td>
+                                {{ question.user_answer }}
+                            </td>
+
+                            <td>
+                                {{ question.correct_answer }}
+                            </td>
+
+                            <td>
+                                {% if question.is_correct %}
+                                    <span class="history-correct">
+                                        Правильно
+                                    </span>
+                                {% else %}
+                                    <span class="history-wrong">
+                                        Ошибка
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ question.response_time_seconds }}
+                                сек.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>
+            История пока пуста.
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

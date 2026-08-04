@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}
+Игра — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="game-layout">
+    <div class="page-card game-card">
+        <div class="game-status">
+            <span>
+                Режим:
+                <strong>
+                    {{ game_session.get_mode_display }}
+                </strong>
+            </span>
+
+            <span>
+                Серия:
+                <strong>
+                    {{ game_session.current_streak }}
+                </strong>
+            </span>
+
+            <span>
+                Звёзды за сессию:
+                <strong>
+                    {{ game_session.stars_earned }}
+                </strong>
+            </span>
+        </div>
+
+        <div class="game-question">
+            {{ question.expression }}
+        </div>
+
+        <form
+            action="{% url 'game:answer' question.pk %}"
+            method="post"
+            class="game-answer-form"
+            novalidate
+        >
+            {% csrf_token %}
+
+            <div class="game-answer-field">
+                {{ form.answer }}
+
+                <button
+                    class="button game-submit-button"
+                    type="submit"
+                >
+                    Проверить
+                </button>
+            </div>
+
+            {% for error in form.answer.errors %}
+                <div class="form-errors">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </form>
+
+        <form
+            action="{% url 'game:finish' %}"
+            method="post"
+            class="game-finish-form"
+        >
+            {% csrf_token %}
+
+            <button
+                class="link-button"
+                type="submit"
+            >
+                Завершить игру
+            </button>
+        </form>
+    </div>
+
+    {% include "game/_recent_questions.html" %}
+</section>
+{% endblock %}
