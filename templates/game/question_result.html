@@ -22,11 +22,22 @@
             =
             {{ question.user_answer }}
         </div>
+        {% if question.is_review %}
+            <div class="review-result-notice">
+                Разбор предыдущей ошибки
+            </div>
+        {% endif %}
 
         {% if question.is_correct %}
             <h1 class="game-result-title">
                 Правильно!
             </h1>
+            {% if question.is_review %}
+                <p class="review-fixed-message">
+                    Ошибка исправлена. Этот пример больше
+                    не будет появляться в списке неразобранных.
+                </p>
+            {% endif %}
 
             <p class="game-result-description">
                 Текущая серия:
@@ -46,6 +57,13 @@
             <h1 class="game-result-title">
                 Неверно
             </h1>
+            {% if question.is_review %}
+                <p>
+                    Этот пример останется в списке ошибок
+                    и может быть предложен снова в следующей
+                    сессии повторения.
+                </p>
+            {% endif %}
 
             <p class="correct-answer-display">
                 Правильный ответ:

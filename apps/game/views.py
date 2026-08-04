@@ -27,6 +27,12 @@ from .services.gameplay import (
     start_game_session,
     submit_answer,
 )
+from .services.review import (
+    NoReviewQuestionsError,
+    count_unresolved_wrong_questions,
+    get_or_create_review_question,
+    start_review_session,
+)
 
 
 ALLOWED_GAME_MODES = {
@@ -48,6 +54,12 @@ def mode_select(request):
 
     active_session = get_active_session(
         user=request.user,
+    )
+
+    unresolved_errors_count = (
+        count_unresolved_wrong_questions(
+            user=request.user,
+        )
     )
 
     return render(
@@ -83,6 +95,7 @@ def mode_select(request):
             ],
             "statistics": statistics,
             "active_session": active_session,
+            "unresolved_errors_count": unresolved_errors_count,
         },
     )
 
@@ -105,10 +118,46 @@ def start(request, mode):
 
 @login_required
 def play(request):
-    try:
-        question = get_or_create_current_question(
-            user=request.user,
+    game_session = get_active_session(
+        user=request.user,
+    )
+
+    if game_session is None:
+        messages.warning(
+            request,
+            "Сначала выберите режим игры.",
         )
+
+        return redirect("game:mode_select")
+
+    try:
+        if (
+            game_session.mode
+            == GameSession.Mode.REVIEW
+        ):
+            question = get_or_create_review_question(
+                user=request.user,
+            )
+        else:
+            question = get_or_create_current_question(
+                user=request.user,
+            )
+
+    except NoReviewQuestionsError:
+        game_session.finish(
+            status=GameSession.Status.COMPLETED
+        )
+
+        messages.success(
+            request,
+            (
+                "Повторение завершено. "
+                "Все выбранные ошибки разобраны."
+            ),
+        )
+
+        return redirect("game:mode_select")
+
     except GameServiceError:
         messages.warning(
             request,
@@ -291,3 +340,20 @@ def history(request):
             "questions": questions[:100],
         },
     )
+
+@login_required
+@require_POST
+def start_review(request):
+    try:
+        start_review_session(
+            user=request.user,
+        )
+    except NoReviewQuestionsError as error:
+        messages.info(
+            request,
+            str(error),
+        )
+
+        return redirect("game:mode_select")
+
+    return redirect("game:play")

@@ -23,6 +23,12 @@
                 >
                     <span class="question-history-item__number">
                         {{ item.expression }}
+
+                        {% if item.is_review %}
+                            <small class="review-badge">
+                                Повтор
+                            </small>
+                        {% endif %}
                     </span>
 
                     <span>

@@ -21,6 +21,7 @@
                     <tr>
                         <th>Дата</th>
                         <th>Режим</th>
+                        <th>Тип</th>
                         <th>Пример</th>
                         <th>Ваш ответ</th>
                         <th>Правильный</th>
@@ -38,6 +39,13 @@
 
                             <td>
                                 {{ question.session.get_mode_display }}
+                            </td>
+                            <td>
+                                {% if question.is_review %}
+                                    Повтор ошибки
+                                {% else %}
+                                    Обычный
+                                {% endif %}
                             </td>
 
                             <td>

@@ -34,6 +34,7 @@ class AnswerResult:
     star_awarded: bool
     total_stars: int
     response_time_ms: int
+    review_completed: bool
 
 
 @transaction.atomic
@@ -153,6 +154,12 @@ def get_or_create_current_question(
 
     if unanswered_question is not None:
         return unanswered_question
+
+    if game_session.mode == GameSession.Mode.REVIEW:
+        raise ValueError(
+            "Для режима повторения используйте "
+            "get_or_create_review_question()."
+        )
 
     max_sequence = (
         GameQuestion.objects
@@ -359,6 +366,10 @@ def submit_answer(
         star_awarded=star_awarded,
         total_stars=statistics.stars,
         response_time_ms=response_time_ms,
+        review_completed=(
+                question.is_review
+                and is_correct
+        ),
     )
 
 

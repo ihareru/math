@@ -18,6 +18,11 @@ urlpatterns = [
         name="start",
     ),
     path(
+        "review/start/",
+        views.start_review,
+        name="start_review",
+    ),
+    path(
         "play/",
         views.play,
         name="play",

@@ -30,6 +30,12 @@
             </span>
         </div>
 
+        {% if question.is_review %}
+            <div class="review-question-notice">
+                Повтор ошибки
+            </div>
+        {% endif %}
+
         <div class="game-question">
             {{ question.expression }}
         </div>

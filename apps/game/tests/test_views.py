@@ -6,6 +6,7 @@ from apps.game.models import GameSession
 from apps.game.services.gameplay import (
     get_or_create_current_question,
     start_game_session,
+    submit_answer,
 )
 
 
@@ -141,4 +142,67 @@ class GameViewTests(TestCase):
         self.assertContains(
             response,
             str(question.correct_answer),
+        )
+
+    def test_review_button_shows_unresolved_count(self):
+        game_session = start_game_session(
+            user=self.user,
+            mode=GameSession.Mode.ADD,
+        )
+
+        question = get_or_create_current_question(
+            user=self.user,
+        )
+
+        submit_answer(
+            user=self.user,
+            question_id=question.pk,
+            user_answer=question.correct_answer + 1,
+        )
+
+        response = self.client.get(
+            reverse("game:mode_select")
+        )
+
+        self.assertContains(
+            response,
+            "Не разобрано ошибок",
+        )
+
+        self.assertContains(
+            response,
+            "1",
+        )
+
+    def test_user_can_start_review_mode(self):
+        game_session = start_game_session(
+            user=self.user,
+            mode=GameSession.Mode.ADD,
+        )
+
+        question = get_or_create_current_question(
+            user=self.user,
+        )
+
+        submit_answer(
+            user=self.user,
+            question_id=question.pk,
+            user_answer=question.correct_answer + 1,
+        )
+
+        response = self.client.post(
+            reverse("game:start_review")
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("game:play"),
+        )
+
+        self.assertTrue(
+            GameSession.objects.filter(
+                user=self.user,
+                mode=GameSession.Mode.REVIEW,
+                status=GameSession.Status.ACTIVE,
+            ).exists()
         )
