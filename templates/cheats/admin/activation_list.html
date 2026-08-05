@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}
+Активации чит-кодов
+{% endblock %}
+
+{% block content %}
+<section class="cheat-admin-page">
+    {% include "cheats/admin/_navigation.html" %}
+
+    <div class="cheat-admin-header">
+        <h1>Активации чит-кодов</h1>
+    </div>
+
+    <form
+        method="get"
+        class="admin-filter-form"
+    >
+        <div>
+            {{ form.search.label_tag }}
+            {{ form.search }}
+        </div>
+
+        <div>
+            {{ form.status.label_tag }}
+            {{ form.status }}
+        </div>
+
+        <button class="button" type="submit">
+            Применить
+        </button>
+    </form>
+
+    {% include "cheats/admin/_activation_table.html" with activations=page_obj.object_list %}
+
+    {% include "game/_pagination.html" %}
+</section>
+{% endblock %}

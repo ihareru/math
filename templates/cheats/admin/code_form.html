@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ page_title }} — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="cheat-admin-page">
+    {% include "cheats/admin/_navigation.html" %}
+
+    <div class="cheat-admin-header">
+        <h1>{{ page_title }}</h1>
+
+        <a
+            class="button button--secondary"
+            href="{% url 'cheats:admin_code_list' %}"
+        >
+            Назад к списку
+        </a>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <section class="admin-form-section">
+            <h2>Основные данные</h2>
+
+            {% for field in form %}
+                <div class="form-group">
+                    {% if field.field.widget.input_type == "checkbox" %}
+                        <label class="checkbox-row">
+                            {{ field }}
+                            {{ field.label }}
+                        </label>
+                    {% else %}
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+
+                        {{ field }}
+                    {% endif %}
+
+                    {% if field.help_text %}
+                        <small class="form-help">
+                            {{ field.help_text }}
+                        </small>
+                    {% endif %}
+
+                    {% for error in field.errors %}
+                        <div class="form-errors">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </section>
+
+        <section class="admin-form-section">
+            <h2>Награды</h2>
+
+            {{ reward_formset.management_form }}
+
+            {% if reward_formset.non_form_errors %}
+                <div class="form-errors">
+                    {{ reward_formset.non_form_errors }}
+                </div>
+            {% endif %}
+
+            <div class="reward-formset">
+                {% for reward_form in reward_formset %}
+                    <article class="reward-formset__item">
+                        {{ reward_form.id }}
+
+                        <div class="form-group">
+                            <label
+                                for="{{ reward_form.reward_type.id_for_label }}"
+                            >
+                                {{ reward_form.reward_type.label }}
+                            </label>
+
+                            {{ reward_form.reward_type }}
+
+                            {% for error in reward_form.reward_type.errors %}
+                                <div class="form-errors">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-group">
+                            <label
+                                for="{{ reward_form.reward_data.id_for_label }}"
+                            >
+                                {{ reward_form.reward_data.label }}
+                            </label>
+
+                            {{ reward_form.reward_data }}
+
+                            {% if reward_form.reward_data.help_text %}
+                                <small class="form-help">
+                                    {{ reward_form.reward_data.help_text }}
+                                </small>
+                            {% endif %}
+
+                            {% for error in reward_form.reward_data.errors %}
+                                <div class="form-errors">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if reward_formset.can_delete %}
+                            <label class="checkbox-row">
+                                {{ reward_form.DELETE }}
+                                Удалить награду
+                            </label>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <div class="form-actions">
+            <button class="button" type="submit">
+                {{ submit_label }}
+            </button>
+
+            {% if cheat %}
+                <a
+                    class="button button--secondary"
+                    href="{% url 'cheats:admin_code_activations' cheat.pk %}"
+                >
+                    Активации
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}
+Чит-коды — управление
+{% endblock %}
+
+{% block content %}
+<section class="cheat-admin-page">
+    {% include "cheats/admin/_navigation.html" %}
+
+    <div class="cheat-admin-header">
+        <h1>Чит-коды</h1>
+
+        <a
+            class="button"
+            href="{% url 'cheats:admin_code_create' %}"
+        >
+            Создать код
+        </a>
+    </div>
+
+    <form
+        method="get"
+        class="admin-filter-form"
+    >
+        <input
+            class="form-control"
+            type="search"
+            name="search"
+            value="{{ search_query }}"
+            placeholder="Название или код"
+        >
+
+        <select
+            class="form-control"
+            name="status"
+        >
+            <option value="">
+                Все статусы
+            </option>
+
+            <option
+                value="enabled"
+                {% if status == "enabled" %}
+                    selected
+                {% endif %}
+            >
+                Включённые
+            </option>
+
+            <option
+                value="disabled"
+                {% if status == "disabled" %}
+                    selected
+                {% endif %}
+            >
+                Отключённые
+            </option>
+        </select>
+
+        <button class="button" type="submit">
+            Применить
+        </button>
+    </form>
+
+    {% if page_obj.object_list %}
+        <div class="history-table-wrapper">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Код</th>
+                        <th>Название</th>
+                        <th>Статус</th>
+                        <th>Награды</th>
+                        <th>Активаций</th>
+                        <th>Пользователей</th>
+                        <th>Срок</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for cheat in page_obj %}
+                        <tr>
+                            <td>
+                                <strong>{{ cheat.code }}</strong>
+                            </td>
+
+                            <td>{{ cheat.name }}</td>
+
+                            <td>
+                                {% if cheat.activation_is_available %}
+                                    <span class="cheat-status cheat-status--active">
+                                        Доступен
+                                    </span>
+                                {% elif cheat.is_active %}
+                                    <span class="cheat-status cheat-status--expired">
+                                        Недоступен
+                                    </span>
+                                {% else %}
+                                    <span class="cheat-status cheat-status--disabled">
+                                        Отключён
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% for reward in cheat.rewards.all %}
+                                    <span class="cheat-reward-badge">
+                                        {{ reward.get_reward_type_display }}
+                                    </span>
+                                {% empty %}
+                                    —
+                                {% endfor %}
+                            </td>
+
+                            <td>
+                                {{ cheat.actual_activation_count }}
+                            </td>
+
+                            <td>
+                                {{ cheat.unique_user_count }}
+                            </td>
+
+                            <td>
+                                {% if cheat.valid_until %}
+                                    до
+                                    {{ cheat.valid_until|date:"d.m.Y H:i" }}
+                                {% else %}
+                                    без общего ограничения
+                                {% endif %}
+                            </td>
+
+                            <td class="table-actions">
+                                <a
+                                    href="{% url 'cheats:admin_code_edit' cheat.pk %}"
+                                >
+                                    Изменить
+                                </a>
+
+                                <a
+                                    href="{% url 'cheats:admin_code_activations' cheat.pk %}"
+                                >
+                                    Активации
+                                </a>
+
+                                <form
+                                    action="{% url 'cheats:admin_code_toggle' cheat.pk %}"
+                                    method="post"
+                                >
+                                    {% csrf_token %}
+
+                                    <input
+                                        type="hidden"
+                                        name="next"
+                                        value="{{ request.get_full_path }}"
+                                    >
+
+                                    <button
+                                        class="link-button"
+                                        type="submit"
+                                    >
+                                        {% if cheat.is_active %}
+                                            Отключить
+                                        {% else %}
+                                            Включить
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "game/_pagination.html" %}
+    {% else %}
+        <p>По заданным условиям коды не найдены.</p>
+    {% endif %}
+</section>
+{% endblock %}

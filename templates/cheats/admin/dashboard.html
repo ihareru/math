@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}
+Управление чит-кодами — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="cheat-admin-page">
+    {% include "cheats/admin/_navigation.html" %}
+
+    <div class="cheat-admin-header">
+        <div>
+            <h1>Управление чит-кодами</h1>
+
+            <p>
+                Сводная статистика кодов и активаций.
+            </p>
+        </div>
+
+        <a
+            class="button"
+            href="{% url 'cheats:admin_code_create' %}"
+        >
+            Создать код
+        </a>
+    </div>
+
+    <section class="statistics-summary">
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ total_codes }}
+            </span>
+
+            <span class="statistics-card__label">
+                всего кодов
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ enabled_codes }}
+            </span>
+
+            <span class="statistics-card__label">
+                включено
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ available_codes }}
+            </span>
+
+            <span class="statistics-card__label">
+                доступно сейчас
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ total_activations }}
+            </span>
+
+            <span class="statistics-card__label">
+                всего активаций
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ active_activations }}
+            </span>
+
+            <span class="statistics-card__label">
+                действующих бонусов
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ activations_last_30_days }}
+            </span>
+
+            <span class="statistics-card__label">
+                активаций за 30 дней
+            </span>
+        </article>
+
+        <article class="statistics-card">
+            <span class="statistics-card__value">
+                {{ unique_users }}
+            </span>
+
+            <span class="statistics-card__label">
+                пользователей кодов
+            </span>
+        </article>
+    </section>
+
+    <section class="statistics-section">
+        <div class="statistics-section__header">
+            <h2>Популярные коды</h2>
+
+            <a href="{% url 'cheats:admin_code_list' %}">
+                Все коды
+            </a>
+        </div>
+
+        {% if popular_codes %}
+            <div class="history-table-wrapper">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Код</th>
+                            <th>Название</th>
+                            <th>Активаций</th>
+                            <th>Пользователей</th>
+                            <th>Действует</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for cheat in popular_codes %}
+                            <tr>
+                                <td>
+                                    <a
+                                        href="{% url 'cheats:admin_code_edit' cheat.pk %}"
+                                    >
+                                        {{ cheat.code }}
+                                    </a>
+                                </td>
+
+                                <td>{{ cheat.name }}</td>
+
+                                <td>
+                                    {{ cheat.real_activation_count }}
+                                </td>
+
+                                <td>
+                                    {{ cheat.unique_user_count }}
+                                </td>
+
+                                <td>
+                                    {{ cheat.active_user_count }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>Чит-коды ещё не созданы.</p>
+        {% endif %}
+    </section>
+
+    <section class="statistics-section">
+        <div class="statistics-section__header">
+            <h2>Последние активации</h2>
+
+            <a href="{% url 'cheats:admin_activation_list' %}">
+                Все активации
+            </a>
+        </div>
+
+        {% include "cheats/admin/_activation_table.html" with activations=recent_activations %}
+    </section>
+</section>
+{% endblock %}
