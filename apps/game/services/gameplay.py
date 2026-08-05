@@ -10,7 +10,9 @@ from apps.game.models import (
     StarTransaction,
     UserGameStatistics,
 )
-
+from apps.cheats.services.rewards import (
+    get_active_game_rewards,
+)
 from .exceptions import (
     ActiveQuestionNotFoundError,
     NoActiveGameSessionError,
@@ -31,10 +33,17 @@ class AnswerResult:
     correct_answer: int
     current_streak: int
     best_streak: int
-    star_awarded: bool
+    awarded_stars: int
     total_stars: int
     response_time_ms: int
     review_completed: bool
+
+    @property
+    def star_awarded(self) -> bool:
+        """
+        Обратная совместимость с существующим кодом.
+        """
+        return self.awarded_stars > 0
 
 
 @transaction.atomic
@@ -285,7 +294,11 @@ def submit_answer(
         )
     )
 
-    star_awarded = False
+    active_rewards = get_active_game_rewards(
+        user=user,
+    )
+
+    awarded_stars = 0
 
     if is_correct:
         game_session.correct_count += 1
@@ -305,27 +318,33 @@ def submit_answer(
 
         if (
             game_session.current_streak
-            % DEFAULT_CORRECT_ANSWERS_PER_STAR
+            % active_rewards.streak_to_star
             == 0
         ):
-            game_session.stars_earned += 1
-            statistics.stars += 1
-            star_awarded = True
+            awarded_stars = (
+                active_rewards.star_multiplier
+            )
+
+            game_session.stars_earned += awarded_stars
+            statistics.stars += awarded_stars
 
             StarTransaction.objects.create(
                 user=user,
                 session=game_session,
-                amount=1,
+                amount=awarded_stars,
                 reason=StarTransaction.Reason.STREAK,
                 description=(
-                    "Звезда за "
-                    f"{DEFAULT_CORRECT_ANSWERS_PER_STAR} "
+                    "Звёзды за серию из "
+                    f"{active_rewards.streak_to_star} "
                     "правильных ответов подряд"
                 ),
             )
     else:
         game_session.wrong_count += 1
-        game_session.current_streak = 0
+
+        if not active_rewards.freeze_streak:
+            game_session.current_streak = 0
+
         statistics.total_wrong += 1
 
     game_session.last_activity_at = now
@@ -363,7 +382,7 @@ def submit_answer(
         correct_answer=question.correct_answer,
         current_streak=game_session.current_streak,
         best_streak=game_session.best_streak,
-        star_awarded=star_awarded,
+        awarded_stars=awarded_stars,
         total_stars=statistics.stars,
         response_time_ms=response_time_ms,
         review_completed=(

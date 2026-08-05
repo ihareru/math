@@ -1250,3 +1250,194 @@ textarea {
         min-height: 115px;
     }
 }
+
+.cheat-page {
+    margin-bottom: 1.25rem;
+}
+
+.cheat-code-input {
+    font-family: monospace;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.active-cheat-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.active-cheat-card {
+    padding: 1rem;
+    background: #f7f9fd;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+}
+
+.active-cheat-card h3 {
+    margin-top: 0;
+}
+
+.active-cheat-card dl,
+.cheat-rules {
+    display: grid;
+    gap: 0.7rem;
+    margin: 1rem 0;
+}
+
+.active-cheat-card dl div,
+.cheat-rules div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.active-cheat-card dt,
+.cheat-rules dt {
+    color: var(--muted-color);
+}
+
+.active-cheat-card dd,
+.cheat-rules dd {
+    margin: 0;
+    font-weight: 800;
+    text-align: right;
+}
+
+.active-cheat-rewards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.cheat-reward-badge {
+    padding: 0.3rem 0.6rem;
+    color: #684d00;
+    background: #fff2b8;
+    border: 1px solid #e5b93f;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+@media (max-width: 520px) {
+    .active-cheat-card dl div,
+    .cheat-rules div {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .active-cheat-card dd,
+    .cheat-rules dd {
+        text-align: left;
+    }
+}
+
+.modal-open {
+    overflow: hidden;
+}
+
+.secret-code-dialog {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+}
+
+.secret-code-dialog[hidden] {
+    display: none;
+}
+
+.secret-code-dialog__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.secret-code-dialog__content {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 480px);
+    padding: 1.5rem;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow:
+        0 24px 70px
+        rgba(0, 0, 0, 0.3);
+}
+
+.secret-code-dialog__content h2 {
+    margin-top: 0;
+}
+
+.secret-code-dialog__close {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.75rem;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    color: var(--muted-color);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.secret-code-dialog__close:hover {
+    color: var(--text-color);
+    background: #eef2f7;
+}
+
+.cheat-history-wrapper {
+    overflow-x: auto;
+}
+
+.cheat-history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cheat-history-table th,
+.cheat-history-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.cheat-history-table th {
+    color: var(--muted-color);
+    background: #f3f6fb;
+}
+
+.cheat-status {
+    display: inline-block;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.cheat-status--active {
+    color: #176b3a;
+    background: #dff3e8;
+}
+
+.cheat-status--expired {
+    color: #8b5b00;
+    background: #fff2b8;
+}
+
+.cheat-status--disabled {
+    color: #8a3030;
+    background: #fde5e5;
+}

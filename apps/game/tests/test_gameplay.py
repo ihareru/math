@@ -15,6 +15,14 @@ from apps.game.services.gameplay import (
     start_game_session,
     submit_answer,
 )
+from apps.cheats.models import (
+    CheatCode,
+    CheatReward,
+    RewardType,
+)
+from apps.cheats.services.activation import (
+    activate_cheat_code,
+)
 
 
 class GameplayServiceTests(TestCase):
@@ -203,4 +211,171 @@ class GameplayServiceTests(TestCase):
         self.assertEqual(
             len(recent),
             10,
+        )
+
+    def test_cheat_awards_star_after_eight_answers(
+            self,
+    ):
+        cheat = CheatCode.objects.create(
+            name="Восемь ответов",
+            code="EIGHT",
+            duration_days=30,
+        )
+
+        CheatReward.objects.create(
+            cheat=cheat,
+            reward_type=(
+                RewardType.STREAK_TO_STAR
+            ),
+            reward_data={
+                "answers": 8,
+            },
+        )
+
+        activate_cheat_code(
+            user=self.user,
+            raw_code=cheat.code,
+        )
+
+        for _ in range(8):
+            question = get_or_create_current_question(
+                user=self.user,
+            )
+
+            submit_answer(
+                user=self.user,
+                question_id=question.pk,
+                user_answer=question.correct_answer,
+            )
+
+        self.session.refresh_from_db()
+        self.user.game_statistics.refresh_from_db()
+
+        self.assertEqual(
+            self.session.current_streak,
+            8,
+        )
+
+        self.assertEqual(
+            self.session.stars_earned,
+            1,
+        )
+
+        self.assertEqual(
+            self.user.game_statistics.stars,
+            1,
+        )
+
+    def test_star_multiplier_awards_two_stars(
+            self,
+    ):
+        cheat = CheatCode.objects.create(
+            name="Двойные звёзды",
+            code="DOUBLE",
+            duration_days=30,
+        )
+
+        CheatReward.objects.create(
+            cheat=cheat,
+            reward_type=(
+                RewardType.DOUBLE_STARS
+            ),
+            reward_data={
+                "multiplier": 2,
+            },
+        )
+
+        activate_cheat_code(
+            user=self.user,
+            raw_code=cheat.code,
+        )
+
+        last_result = None
+
+        for _ in range(10):
+            question = get_or_create_current_question(
+                user=self.user,
+            )
+
+            last_result = submit_answer(
+                user=self.user,
+                question_id=question.pk,
+                user_answer=question.correct_answer,
+            )
+
+        self.assertIsNotNone(last_result)
+
+        self.assertEqual(
+            last_result.awarded_stars,
+            2,
+        )
+
+        self.session.refresh_from_db()
+        self.user.game_statistics.refresh_from_db()
+
+        self.assertEqual(
+            self.session.stars_earned,
+            2,
+        )
+
+        self.assertEqual(
+            self.user.game_statistics.stars,
+            2,
+        )
+
+    def test_freeze_streak_keeps_streak_after_error(
+            self,
+    ):
+        cheat = CheatCode.objects.create(
+            name="Заморозка серии",
+            code="FREEZE",
+            duration_days=30,
+        )
+
+        CheatReward.objects.create(
+            cheat=cheat,
+            reward_type=(
+                RewardType.FREEZE_STREAK
+            ),
+            reward_data={
+                "enabled": True,
+            },
+        )
+
+        activate_cheat_code(
+            user=self.user,
+            raw_code=cheat.code,
+        )
+
+        first_question = (
+            get_or_create_current_question(
+                user=self.user,
+            )
+        )
+
+        submit_answer(
+            user=self.user,
+            question_id=first_question.pk,
+            user_answer=first_question.correct_answer,
+        )
+
+        second_question = (
+            get_or_create_current_question(
+                user=self.user,
+            )
+        )
+
+        submit_answer(
+            user=self.user,
+            question_id=second_question.pk,
+            user_answer=(
+                    second_question.correct_answer + 1
+            ),
+        )
+
+        self.session.refresh_from_db()
+
+        self.assertEqual(
+            self.session.current_streak,
+            1,
         )

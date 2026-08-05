@@ -38,6 +38,7 @@ LOCAL_APPS = [
     "apps.settings.apps.SettingsConfig",
     "apps.game.apps.GameConfig",
     "apps.analytics.apps.AnalyticsConfig",
+    "apps.cheats.apps.CheatsConfig",
 
 ]
 

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}
+Секретные коды — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="page-card cheat-page">
+    <h1>Секретный код</h1>
+
+    <p>
+        Введите полученный код. Некоторые коды
+        предоставляют временные игровые бонусы.
+    </p>
+
+    <form
+        action="{% url 'cheats:activate' %}"
+        method="post"
+        novalidate
+    >
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.code.id_for_label }}">
+                {{ form.code.label }}
+            </label>
+
+            {{ form.code }}
+
+            {% for error in form.code.errors %}
+                <div class="form-errors">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button
+                class="button"
+                type="submit"
+            >
+                Активировать
+            </button>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'accounts:account_detail' %}"
+            >
+                Личный кабинет
+            </a>
+        </div>
+    </form>
+</section>
+
+<section class="page-card cheat-page">
+    <h2>Действующие бонусы</h2>
+
+    {% if active_activations %}
+        <div class="active-cheat-list">
+            {% for activation in active_activations %}
+                <article class="active-cheat-card">
+                    <div>
+                        <h3>
+                            {{ activation.cheat.name }}
+                        </h3>
+
+                        {% if activation.cheat.description %}
+                            <p>
+                                {{ activation.cheat.description }}
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <dl>
+                        <div>
+                            <dt>Код</dt>
+                            <dd>
+                                {{ activation.cheat.code }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>Активирован</dt>
+                            <dd>
+                                {{ activation.activated_at|date:"d.m.Y H:i" }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>Действует до</dt>
+                            <dd>
+                                {% if activation.expires_at %}
+                                    {{ activation.expires_at|date:"d.m.Y H:i" }}
+                                {% else %}
+                                    Бессрочно
+                                {% endif %}
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <div class="active-cheat-rewards">
+                        {% for reward in activation.cheat.rewards.all %}
+                            <span class="cheat-reward-badge">
+                                {{ reward.get_reward_type_display }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>
+            Активных бонусов сейчас нет.
+        </p>
+    {% endif %}
+</section>
+
+{% if active_activations %}
+    <section class="page-card cheat-page">
+        <h2>Текущие игровые правила</h2>
+
+        <dl class="cheat-rules">
+            <div>
+                <dt>
+                    Правильных ответов до звезды
+                </dt>
+                <dd>
+                    {{ active_rewards.streak_to_star }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Множитель звёзд</dt>
+                <dd>
+                    ×{{ active_rewards.star_multiplier }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Сохранение серии при ошибке</dt>
+                <dd>
+                    {% if active_rewards.freeze_streak %}
+                        Включено
+                    {% else %}
+                        Выключено
+                    {% endif %}
+                </dd>
+            </div>
+        </dl>
+    </section>
+    <section class="page-card cheat-page">
+        <h2>История активаций</h2>
+
+        {% if activation_history %}
+            <div class="cheat-history-wrapper">
+                <table class="cheat-history-table">
+                    <thead>
+                        <tr>
+                            <th>Код</th>
+                            <th>Название</th>
+                            <th>Активирован</th>
+                            <th>Действует до</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for activation in activation_history %}
+                            <tr>
+                                <td>
+                                    <strong>
+                                        {{ activation.cheat.code }}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    {{ activation.cheat.name }}
+                                </td>
+
+                                <td>
+                                    {{ activation.activated_at|date:"d.m.Y H:i" }}
+                                </td>
+
+                                <td>
+                                    {% if activation.expires_at %}
+                                        {{ activation.expires_at|date:"d.m.Y H:i" }}
+                                    {% else %}
+                                        Бессрочно
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if activation.currently_active %}
+                                        <span class="cheat-status cheat-status--active">
+                                            Действует
+                                        </span>
+                                    {% elif not activation.is_active %}
+                                        <span class="cheat-status cheat-status--disabled">
+                                            Отключён
+                                        </span>
+                                    {% else %}
+                                        <span class="cheat-status cheat-status--expired">
+                                            Истёк
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>
+                Вы ещё не активировали ни одного кода.
+            </p>
+        {% endif %}
+    </section>
+{% endif %}
+{% endblock %}

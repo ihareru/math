@@ -1,17 +1,29 @@
 import json
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
-from django.contrib.auth.decorators import (
-    login_required,
-)
+from django.shortcuts import render
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import (
     require_POST,
 )
+from django.contrib.auth.decorators import (
+    login_required,
+)
+from django.contrib.admin.views.decorators import (
+    staff_member_required,
+)
 
 from .services.sessions import (
     get_or_create_visit_session,
+)
+from .services.dashboard import (
+    dashboard_statistics,
+)
+from .models import (
+    LoginEvent,
+    VisitSession,
 )
 
 
@@ -154,4 +166,91 @@ def client_context(request):
         {
             "ok": True,
         }
+    )
+
+@staff_member_required
+def dashboard(request):
+
+    context = dashboard_statistics()
+
+    return render(
+        request,
+        "analytics/dashboard.html",
+        context,
+    )
+
+@staff_member_required
+def online_users(request):
+
+    border = timezone.now() - timedelta(minutes=5)
+
+    sessions = (
+        VisitSession.objects
+        .select_related("user")
+        .filter(
+            last_seen_at__gte=border,
+            user__isnull=False,
+        )
+        .order_by("-last_seen_at")
+    )
+
+    return render(
+        request,
+        "analytics/online.html",
+        {
+            "sessions": sessions,
+        },
+    )
+
+@staff_member_required
+def login_events(request):
+
+    events = (
+        LoginEvent.objects
+        .select_related("user")
+        .order_by("-logged_in_at")
+    )
+
+    return render(
+        request,
+        "analytics/logins.html",
+        {
+            "events": events,
+        },
+    )
+
+@staff_member_required
+def visit_sessions(request):
+
+    sessions = (
+        VisitSession.objects
+        .select_related("user")
+        .order_by("-last_seen_at")
+    )
+
+    return render(
+        request,
+        "analytics/sessions.html",
+        {
+            "sessions": sessions,
+        },
+    )
+
+@staff_member_required
+def user_activity(request):
+
+    users = (
+        User.objects
+        .select_related(
+            "game_statistics"
+        )
+        .order_by("display_name")
+    )
+
+    return render(
+        request,
+        "analytics/users.html",
+        {
+            "users": users,
+        },
     )

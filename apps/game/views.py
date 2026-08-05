@@ -224,13 +224,18 @@ def answer(request, question_id):
         )
 
     try:
-        submit_answer(
+        answer_result = submit_answer(
             user=request.user,
             question_id=question.pk,
             user_answer=form.cleaned_data[
                 "answer"
             ],
         )
+
+        request.session[
+            f"question_{question.pk}_awarded_stars"
+        ] = answer_result.awarded_stars
+
     except GameServiceError as error:
         messages.warning(
             request,
@@ -270,6 +275,11 @@ def question_result(
         )
     )
 
+    awarded_stars = request.session.pop(
+        f"question_{question.pk}_awarded_stars",
+        0,
+    )
+
     return render(
         request,
         "game/question_result.html",
@@ -278,6 +288,7 @@ def question_result(
             "game_session": question.session,
             "statistics": statistics,
             "recent_questions": recent_questions,
+            "awarded_stars": awarded_stars,
         },
     )
 

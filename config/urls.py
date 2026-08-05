@@ -38,6 +38,13 @@ urlpatterns = [
         ),
     ),
     path(
+        "cheats/",
+        include(
+            "apps.cheats.urls",
+            namespace="cheats",
+        ),
+    ),
+    path(
         "",
         include(
             "apps.dashboard.urls",

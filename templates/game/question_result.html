@@ -46,12 +46,11 @@
                 </strong>
             </p>
 
-            {% if game_session.current_streak %}
-                {% if game_session.current_streak|divisibleby:10 %}
-                    <p class="star-award-message">
-                        Получена новая звезда!
-                    </p>
-                {% endif %}
+            {% if awarded_stars %}
+                <p class="star-award-message">
+                    Получено звёзд:
+                    <strong>{{ awarded_stars }}</strong>
+                </p>
             {% endif %}
         {% else %}
             <h1 class="game-result-title">
