@@ -1,7 +1,23 @@
 import random
 from dataclasses import dataclass
+from typing import Iterable
 
-from apps.game.models import GameQuestion, GameSession
+from apps.game.models import (
+    GameQuestion,
+    GameSession,
+    OperationGenerationSettings,
+    UserGenerationSettings,
+)
+
+from .generator_exceptions import (
+    InvalidGenerationSettingsError,
+    NoEnabledOperationsError,
+    OperationDisabledError,
+    QuestionGenerationError,
+)
+
+
+MAX_GENERATION_ATTEMPTS = 500
 
 
 @dataclass(frozen=True)
@@ -11,102 +27,658 @@ class GeneratedQuestion:
     num2: int
     correct_answer: int
 
+    @property
+    def identity_key(self) -> tuple[str, int, int]:
+        """
+        Нормализованный ключ примера.
 
-MODE_OPERATIONS = {
-    GameSession.Mode.ADD: [
-        GameQuestion.Operation.ADD,
-    ],
-    GameSession.Mode.SUB: [
-        GameQuestion.Operation.SUB,
-    ],
-    GameSession.Mode.MUL: [
-        GameQuestion.Operation.MUL,
-    ],
-    GameSession.Mode.DIV: [
-        GameQuestion.Operation.DIV,
-    ],
-    GameSession.Mode.ALL: [
-        GameQuestion.Operation.ADD,
-        GameQuestion.Operation.SUB,
-        GameQuestion.Operation.MUL,
-        GameQuestion.Operation.DIV,
-    ],
-}
+        Для сложения и умножения:
+        5 + 9 и 9 + 5 считаются одинаковыми.
 
+        Для вычитания и деления порядок важен.
+        """
+        if self.operation in {
+            GameQuestion.Operation.ADD,
+            GameQuestion.Operation.MUL,
+        }:
+            first, second = sorted(
+                (
+                    self.num1,
+                    self.num2,
+                )
+            )
 
-def generate_question(mode: str) -> GeneratedQuestion:
-    """
-    Создаёт математический пример для указанного режима.
+            return (
+                self.operation,
+                first,
+                second,
+            )
 
-    Для деления всегда создаётся пример без остатка.
-    Для вычитания результат не бывает отрицательным.
-    """
-    if mode not in MODE_OPERATIONS:
-        raise ValueError(
-            f"Режим {mode!r} не поддерживается генератором."
+        return (
+            self.operation,
+            self.num1,
+            self.num2,
         )
 
-    operation = random.choice(
-        MODE_OPERATIONS[mode]
+
+def generate_question(
+    *,
+    game_session: GameSession,
+    recent_identity_keys: set[
+        tuple[str, int, int]
+    ] | None = None,
+) -> GeneratedQuestion:
+    """
+    Генерирует пример по персональным настройкам
+    пользователя и режиму игровой сессии.
+
+    recent_identity_keys используется для исключения
+    недавно показанных примеров.
+    """
+    generation_settings = (
+        _get_generation_settings(
+            user=game_session.user,
+        )
     )
 
-    generators = {
-        GameQuestion.Operation.ADD: _generate_addition,
-        GameQuestion.Operation.SUB: _generate_subtraction,
-        GameQuestion.Operation.MUL: _generate_multiplication,
-        GameQuestion.Operation.DIV: _generate_division,
+    operation_settings = (
+        _select_operation_settings(
+            game_session=game_session,
+            generation_settings=(
+                generation_settings
+            ),
+        )
+    )
+
+    recent_identity_keys = (
+        recent_identity_keys
+        or set()
+    )
+
+    difficulty_level = (
+        generation_settings
+        .current_difficulty_level
+    )
+
+    last_valid_question = None
+
+    for _ in range(MAX_GENERATION_ATTEMPTS):
+        question = _generate_for_operation(
+            operation_settings=(
+                operation_settings
+            ),
+            difficulty_level=(
+                difficulty_level
+            ),
+        )
+
+        last_valid_question = question
+
+        if (
+            generation_settings
+            .avoid_recent_duplicates
+            and question.identity_key
+            in recent_identity_keys
+        ):
+            continue
+
+        return question
+
+    if last_valid_question is not None:
+        # Если диапазон слишком мал и все возможные
+        # комбинации уже находятся в журнале,
+        # возвращаем корректный повтор вместо ошибки 500.
+        return last_valid_question
+
+    raise QuestionGenerationError(
+        "Не удалось сформировать математический пример."
+    )
+
+
+def build_identity_key(
+    *,
+    operation: str,
+    num1: int,
+    num2: int,
+) -> tuple[str, int, int]:
+    """
+    Создаёт ключ существующего GameQuestion.
+    """
+    if operation in {
+        GameQuestion.Operation.ADD,
+        GameQuestion.Operation.MUL,
+    }:
+        first, second = sorted(
+            (
+                num1,
+                num2,
+            )
+        )
+
+        return (
+            operation,
+            first,
+            second,
+        )
+
+    return (
+        operation,
+        num1,
+        num2,
+    )
+
+
+def _get_generation_settings(
+    *,
+    user,
+) -> UserGenerationSettings:
+    """
+    Сигнал должен создавать настройки заранее.
+    Дополнительный get_or_create защищает старые
+    или импортированные аккаунты.
+    """
+    from .generation_settings import (
+        create_default_generation_settings,
+    )
+
+    return create_default_generation_settings(
+        user=user,
+    )
+
+
+def _select_operation_settings(
+    *,
+    game_session: GameSession,
+    generation_settings: UserGenerationSettings,
+) -> OperationGenerationSettings:
+    """
+    Возвращает настройки выбранного действия.
+
+    Для режима ALL действие выбирается с учётом веса.
+    """
+    if game_session.mode == GameSession.Mode.ALL:
+        return _select_weighted_operation(
+            generation_settings=(
+                generation_settings
+            )
+        )
+
+    operation_map = {
+        GameSession.Mode.ADD: (
+            OperationGenerationSettings
+            .Operation
+            .ADD
+        ),
+        GameSession.Mode.SUB: (
+            OperationGenerationSettings
+            .Operation
+            .SUB
+        ),
+        GameSession.Mode.MUL: (
+            OperationGenerationSettings
+            .Operation
+            .MUL
+        ),
+        GameSession.Mode.DIV: (
+            OperationGenerationSettings
+            .Operation
+            .DIV
+        ),
     }
 
-    return generators[operation]()
+    operation = operation_map.get(
+        game_session.mode
+    )
+
+    if operation is None:
+        raise InvalidGenerationSettingsError(
+            "Игровой режим не поддерживается генератором."
+        )
+
+    settings_object = (
+        generation_settings
+        .operations
+        .filter(operation=operation)
+        .first()
+    )
+
+    if settings_object is None:
+        raise InvalidGenerationSettingsError(
+            "Для выбранного действия отсутствуют настройки."
+        )
+
+    if not settings_object.is_enabled:
+        raise OperationDisabledError(
+            "Выбранное математическое действие отключено "
+            "в настройках генератора."
+        )
+
+    return settings_object
 
 
-def _generate_addition() -> GeneratedQuestion:
-    num1 = random.randint(1, 100)
-    num2 = random.randint(1, 100)
+def _select_weighted_operation(
+    *,
+    generation_settings: UserGenerationSettings,
+) -> OperationGenerationSettings:
+    operations = list(
+        generation_settings
+        .operations
+        .filter(
+            is_enabled=True,
+            mixed_mode_weight__gt=0,
+        )
+        .order_by("operation")
+    )
 
-    return GeneratedQuestion(
-        operation=GameQuestion.Operation.ADD,
-        num1=num1,
-        num2=num2,
-        correct_answer=num1 + num2,
+    if not operations:
+        raise NoEnabledOperationsError(
+            "В режиме «Все действия» не включено "
+            "ни одного математического действия."
+        )
+
+    weights = [
+        operation.mixed_mode_weight
+        for operation in operations
+    ]
+
+    return random.choices(
+        population=operations,
+        weights=weights,
+        k=1,
+    )[0]
+
+
+def _generate_for_operation(
+    *,
+    operation_settings:
+        OperationGenerationSettings,
+    difficulty_level: int,
+) -> GeneratedQuestion:
+    generators = {
+        (
+            OperationGenerationSettings
+            .Operation
+            .ADD
+        ): _generate_addition,
+        (
+            OperationGenerationSettings
+            .Operation
+            .SUB
+        ): _generate_subtraction,
+        (
+            OperationGenerationSettings
+            .Operation
+            .MUL
+        ): _generate_multiplication,
+        (
+            OperationGenerationSettings
+            .Operation
+            .DIV
+        ): _generate_division,
+    }
+
+    generator = generators.get(
+        operation_settings.operation
+    )
+
+    if generator is None:
+        raise InvalidGenerationSettingsError(
+            "Неизвестное математическое действие."
+        )
+
+    return generator(
+        settings_object=operation_settings,
+        difficulty_level=difficulty_level,
     )
 
 
-def _generate_subtraction() -> GeneratedQuestion:
-    num1 = random.randint(1, 100)
-    num2 = random.randint(1, 100)
+def _generate_addition(
+    *,
+    settings_object,
+    difficulty_level,
+) -> GeneratedQuestion:
+    first_min, first_max = _scaled_range(
+        minimum=settings_object.first_operand_min,
+        maximum=settings_object.first_operand_max,
+        difficulty_level=difficulty_level,
+    )
 
-    if num2 > num1:
-        num1, num2 = num2, num1
+    second_min, second_max = _scaled_range(
+        minimum=settings_object.second_operand_min,
+        maximum=settings_object.second_operand_max,
+        difficulty_level=difficulty_level,
+    )
 
-    return GeneratedQuestion(
-        operation=GameQuestion.Operation.SUB,
-        num1=num1,
-        num2=num2,
-        correct_answer=num1 - num2,
+    for _ in range(MAX_GENERATION_ATTEMPTS):
+        num1 = random.randint(
+            first_min,
+            first_max,
+        )
+
+        num2 = random.randint(
+            second_min,
+            second_max,
+        )
+
+        answer = num1 + num2
+
+        if _answer_is_allowed(
+            answer=answer,
+            settings_object=settings_object,
+        ):
+            return GeneratedQuestion(
+                operation=GameQuestion.Operation.ADD,
+                num1=num1,
+                num2=num2,
+                correct_answer=answer,
+            )
+
+    raise InvalidGenerationSettingsError(
+        "Диапазоны сложения не позволяют получить "
+        "результат в заданных пределах."
     )
 
 
-def _generate_multiplication() -> GeneratedQuestion:
-    num1 = random.randint(1, 10)
-    num2 = random.randint(1, 10)
+def _generate_subtraction(
+    *,
+    settings_object,
+    difficulty_level,
+) -> GeneratedQuestion:
+    first_min, first_max = _scaled_range(
+        minimum=settings_object.first_operand_min,
+        maximum=settings_object.first_operand_max,
+        difficulty_level=difficulty_level,
+    )
 
-    return GeneratedQuestion(
-        operation=GameQuestion.Operation.MUL,
-        num1=num1,
-        num2=num2,
-        correct_answer=num1 * num2,
+    second_min, second_max = _scaled_range(
+        minimum=settings_object.second_operand_min,
+        maximum=settings_object.second_operand_max,
+        difficulty_level=difficulty_level,
+    )
+
+    for _ in range(MAX_GENERATION_ATTEMPTS):
+        num1 = random.randint(
+            first_min,
+            first_max,
+        )
+
+        num2 = random.randint(
+            second_min,
+            second_max,
+        )
+
+        if (
+            not settings_object
+            .allow_negative_result
+            and num2 > num1
+        ):
+            num1, num2 = num2, num1
+
+        answer = num1 - num2
+
+        if _answer_is_allowed(
+            answer=answer,
+            settings_object=settings_object,
+        ):
+            return GeneratedQuestion(
+                operation=GameQuestion.Operation.SUB,
+                num1=num1,
+                num2=num2,
+                correct_answer=answer,
+            )
+
+    raise InvalidGenerationSettingsError(
+        "Диапазоны вычитания не позволяют получить "
+        "результат в заданных пределах."
     )
 
 
-def _generate_division() -> GeneratedQuestion:
-    divisor = random.randint(1, 10)
-    correct_answer = random.randint(1, 10)
-    dividend = divisor * correct_answer
+def _generate_multiplication(
+    *,
+    settings_object,
+    difficulty_level,
+) -> GeneratedQuestion:
+    first_min, first_max = _scaled_range(
+        minimum=settings_object.first_operand_min,
+        maximum=settings_object.first_operand_max,
+        difficulty_level=difficulty_level,
+    )
 
-    return GeneratedQuestion(
-        operation=GameQuestion.Operation.DIV,
-        num1=dividend,
-        num2=divisor,
-        correct_answer=correct_answer,
+    second_min, second_max = _scaled_range(
+        minimum=settings_object.second_operand_min,
+        maximum=settings_object.second_operand_max,
+        difficulty_level=difficulty_level,
+    )
+
+    for _ in range(MAX_GENERATION_ATTEMPTS):
+        num1 = random.randint(
+            first_min,
+            first_max,
+        )
+
+        num2 = random.randint(
+            second_min,
+            second_max,
+        )
+
+        answer = num1 * num2
+
+        if _answer_is_allowed(
+            answer=answer,
+            settings_object=settings_object,
+        ):
+            return GeneratedQuestion(
+                operation=GameQuestion.Operation.MUL,
+                num1=num1,
+                num2=num2,
+                correct_answer=answer,
+            )
+
+    raise InvalidGenerationSettingsError(
+        "Диапазоны умножения не позволяют получить "
+        "результат в заданных пределах."
+    )
+
+
+def _generate_division(
+    *,
+    settings_object,
+    difficulty_level,
+) -> GeneratedQuestion:
+    """
+    В текущей версии поддерживается только
+    целочисленное деление без остатка.
+
+    first_operand_* задаёт диапазон результата.
+    second_operand_* задаёт диапазон делителя.
+    Делимое вычисляется как результат × делитель.
+    """
+    answer_min, answer_max = _scaled_range(
+        minimum=settings_object.first_operand_min,
+        maximum=settings_object.first_operand_max,
+        difficulty_level=difficulty_level,
+    )
+
+    divisor_min, divisor_max = _scaled_range(
+        minimum=settings_object.second_operand_min,
+        maximum=settings_object.second_operand_max,
+        difficulty_level=difficulty_level,
+    )
+
+    divisor_min = max(
+        1,
+        divisor_min,
+    )
+
+    if divisor_max < divisor_min:
+        raise InvalidGenerationSettingsError(
+            "Диапазон делителя не содержит "
+            "положительных чисел."
+        )
+
+    for _ in range(MAX_GENERATION_ATTEMPTS):
+        correct_answer = random.randint(
+            answer_min,
+            answer_max,
+        )
+
+        divisor = random.randint(
+            divisor_min,
+            divisor_max,
+        )
+
+        dividend = (
+            correct_answer
+            * divisor
+        )
+
+        if _answer_is_allowed(
+            answer=correct_answer,
+            settings_object=settings_object,
+        ):
+            return GeneratedQuestion(
+                operation=GameQuestion.Operation.DIV,
+                num1=dividend,
+                num2=divisor,
+                correct_answer=correct_answer,
+            )
+
+    raise InvalidGenerationSettingsError(
+        "Диапазоны деления не позволяют получить "
+        "результат в заданных пределах."
+    )
+
+
+def _scaled_range(
+    *,
+    minimum: int,
+    maximum: int,
+    difficulty_level: int,
+) -> tuple[int, int]:
+    """
+    При автоматическом повышении сложности
+    постепенно расширяет верхнюю границу.
+
+    Уровень 1 использует исходный диапазон.
+    Каждый следующий уровень добавляет 10%
+    исходной ширины диапазона, минимум 1.
+    """
+    if maximum < minimum:
+        raise InvalidGenerationSettingsError(
+            "Максимум диапазона меньше минимума."
+        )
+
+    safe_level = max(
+        1,
+        int(difficulty_level),
+    )
+
+    if safe_level == 1:
+        return minimum, maximum
+
+    width = maximum - minimum
+
+    increment_per_level = max(
+        1,
+        round(width * 0.1),
+    )
+
+    scaled_maximum = (
+        maximum
+        + increment_per_level
+        * (safe_level - 1)
+    )
+
+    return (
+        minimum,
+        scaled_maximum,
+    )
+
+
+def _answer_is_allowed(
+    *,
+    answer: int,
+    settings_object:
+        OperationGenerationSettings,
+) -> bool:
+    if (
+        settings_object.minimum_answer
+        is not None
+        and answer
+        < settings_object.minimum_answer
+    ):
+        return False
+
+    if (
+        settings_object.maximum_answer
+        is not None
+        and answer
+        > settings_object.maximum_answer
+    ):
+        return False
+
+    return True
+
+def operation_is_enabled_for_mode(
+    *,
+    user,
+    mode: str,
+) -> bool:
+    """
+    Проверяет, доступен ли режим по настройкам
+    генератора пользователя.
+    """
+    generation_settings = (
+        _get_generation_settings(
+            user=user,
+        )
+    )
+
+    if mode == GameSession.Mode.ALL:
+        return (
+            generation_settings
+            .operations
+            .filter(
+                is_enabled=True,
+                mixed_mode_weight__gt=0,
+            )
+            .exists()
+        )
+
+    operation_map = {
+        GameSession.Mode.ADD: (
+            OperationGenerationSettings
+            .Operation
+            .ADD
+        ),
+        GameSession.Mode.SUB: (
+            OperationGenerationSettings
+            .Operation
+            .SUB
+        ),
+        GameSession.Mode.MUL: (
+            OperationGenerationSettings
+            .Operation
+            .MUL
+        ),
+        GameSession.Mode.DIV: (
+            OperationGenerationSettings
+            .Operation
+            .DIV
+        ),
+    }
+
+    operation = operation_map.get(mode)
+
+    if operation is None:
+        return False
+
+    return (
+        generation_settings
+        .operations
+        .filter(
+            operation=operation,
+            is_enabled=True,
+        )
+        .exists()
     )

@@ -1,5 +1,8 @@
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator,
+)
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -572,3 +575,351 @@ class StarTransaction(models.Model):
             f"{self.user.display_name}: "
             f"{sign}{self.amount}"
         )
+
+
+class UserGenerationSettings(models.Model):
+    """
+    Общие настройки генерации примеров пользователя.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="generation_settings",
+        verbose_name="Пользователь",
+    )
+
+    avoid_recent_duplicates = models.BooleanField(
+        "Не повторять недавние примеры",
+        default=True,
+    )
+
+    recent_questions_limit = models.PositiveSmallIntegerField(
+        "Размер журнала повторов",
+        default=100,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(500),
+        ],
+        help_text=(
+            "Сколько последних примеров учитывать "
+            "при проверке повторений."
+        ),
+    )
+
+    auto_increase_difficulty = models.BooleanField(
+        "Автоматически повышать сложность",
+        default=False,
+    )
+
+    correct_answers_per_level = models.PositiveIntegerField(
+        "Правильных ответов до повышения уровня",
+        default=50,
+        validators=[
+            MinValueValidator(1),
+        ],
+    )
+
+    maximum_difficulty_level = models.PositiveSmallIntegerField(
+        "Максимальный уровень сложности",
+        default=10,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(100),
+        ],
+    )
+
+    created_at = models.DateTimeField(
+        "Дата создания",
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        "Дата изменения",
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = "Общие настройки генератора"
+        verbose_name_plural = (
+            "Общие настройки генераторов"
+        )
+
+    def __str__(self):
+        return (
+            "Настройки генератора: "
+            f"{self.user.display_name}"
+        )
+
+    @property
+    def current_difficulty_level(self):
+        """
+        Текущий уровень рассчитывается по общей
+        статистике правильных ответов.
+
+        Уровень начинается с 1.
+        """
+        if not self.auto_increase_difficulty:
+            return 1
+
+        try:
+            total_correct = (
+                self.user.game_statistics.total_correct
+            )
+        except UserGameStatistics.DoesNotExist:
+            total_correct = 0
+
+        calculated_level = (
+            total_correct
+            // self.correct_answers_per_level
+            + 1
+        )
+
+        return min(
+            calculated_level,
+            self.maximum_difficulty_level,
+        )
+
+
+class OperationGenerationSettings(models.Model):
+    """
+    Настройки генерации одного математического
+    действия для конкретного пользователя.
+    """
+
+    class Operation(models.TextChoices):
+        ADD = "add", "Сложение"
+        SUB = "sub", "Вычитание"
+        MUL = "mul", "Умножение"
+        DIV = "div", "Деление"
+
+    generation_settings = models.ForeignKey(
+        UserGenerationSettings,
+        on_delete=models.CASCADE,
+        related_name="operations",
+        verbose_name="Общие настройки",
+    )
+
+    operation = models.CharField(
+        "Математическое действие",
+        max_length=3,
+        choices=Operation.choices,
+    )
+
+    is_enabled = models.BooleanField(
+        "Использовать действие",
+        default=True,
+    )
+
+    mixed_mode_weight = models.PositiveSmallIntegerField(
+        "Вес в смешанном режиме",
+        default=25,
+        validators=[
+            MinValueValidator(0),
+        ],
+        help_text=(
+            "Чем больше значение, тем чаще действие "
+            "появляется в режиме «Все действия»."
+        ),
+    )
+
+    first_operand_min = models.IntegerField(
+        "Минимальное первое число",
+        default=1,
+    )
+
+    first_operand_max = models.IntegerField(
+        "Максимальное первое число",
+        default=100,
+    )
+
+    second_operand_min = models.IntegerField(
+        "Минимальное второе число",
+        default=1,
+    )
+
+    second_operand_max = models.IntegerField(
+        "Максимальное второе число",
+        default=100,
+    )
+
+    operands_count = models.PositiveSmallIntegerField(
+        "Количество операндов",
+        default=2,
+        validators=[
+            MinValueValidator(2),
+            MaxValueValidator(4),
+        ],
+        help_text=(
+            "Для первой версии поддерживаются "
+            "значения от 2 до 4."
+        ),
+    )
+
+    minimum_answer = models.IntegerField(
+        "Минимальный результат",
+        null=True,
+        blank=True,
+    )
+
+    maximum_answer = models.IntegerField(
+        "Максимальный результат",
+        null=True,
+        blank=True,
+    )
+
+    allow_negative_result = models.BooleanField(
+        "Разрешать отрицательный результат",
+        default=False,
+        help_text=(
+            "Применяется только к вычитанию."
+        ),
+    )
+
+    allow_remainder = models.BooleanField(
+        "Разрешать деление с остатком",
+        default=False,
+        help_text=(
+            "Зарезервировано для будущего режима "
+            "с десятичными ответами."
+        ),
+    )
+
+    created_at = models.DateTimeField(
+        "Дата создания",
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        "Дата изменения",
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = "Настройки математического действия"
+        verbose_name_plural = (
+            "Настройки математических действий"
+        )
+
+        ordering = [
+            "generation_settings",
+            "operation",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "generation_settings",
+                    "operation",
+                ],
+                name="game_unique_generation_operation",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    first_operand_max__gte=models.F(
+                        "first_operand_min"
+                    )
+                ),
+                name="game_first_operand_range_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    second_operand_max__gte=models.F(
+                        "second_operand_min"
+                    )
+                ),
+                name="game_second_operand_range_valid",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(minimum_answer__isnull=True)
+                    | models.Q(maximum_answer__isnull=True)
+                    | models.Q(
+                        maximum_answer__gte=models.F(
+                            "minimum_answer"
+                        )
+                    )
+                ),
+                name="game_answer_range_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    operands_count__gte=2,
+                    operands_count__lte=4,
+                ),
+                name="game_operands_count_valid",
+            ),
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "generation_settings",
+                    "operation",
+                ],
+                name="game_generation_operation_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.generation_settings.user.display_name}: "
+            f"{self.get_operation_display()}"
+        )
+
+    def clean(self):
+        super().clean()
+
+        from django.core.exceptions import ValidationError
+
+        errors = {}
+
+        if self.first_operand_max < self.first_operand_min:
+            errors["first_operand_max"] = (
+                "Максимальное значение не может быть "
+                "меньше минимального."
+            )
+
+        if self.second_operand_max < self.second_operand_min:
+            errors["second_operand_max"] = (
+                "Максимальное значение не может быть "
+                "меньше минимального."
+            )
+
+        if (
+            self.minimum_answer is not None
+            and self.maximum_answer is not None
+            and self.maximum_answer
+            < self.minimum_answer
+        ):
+            errors["maximum_answer"] = (
+                "Максимальный результат не может быть "
+                "меньше минимального."
+            )
+
+        if not 2 <= self.operands_count <= 4:
+            errors["operands_count"] = (
+                "Количество операндов должно быть "
+                "от 2 до 4."
+            )
+
+        if (
+            self.operation != self.Operation.SUB
+            and self.allow_negative_result
+        ):
+            errors["allow_negative_result"] = (
+                "Отрицательный результат можно разрешить "
+                "только для вычитания."
+            )
+
+        if (
+            self.operation != self.Operation.DIV
+            and self.allow_remainder
+        ):
+            errors["allow_remainder"] = (
+                "Деление с остатком относится только "
+                "к операции деления."
+            )
+
+        if errors:
+            raise ValidationError(errors)

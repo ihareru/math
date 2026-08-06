@@ -9,15 +9,16 @@ from django.shortcuts import (
     redirect,
     render,
 )
-from django.db.models import Avg, Q
+from django.db import transaction
+from django.db.models import Avg, Q, Case, IntegerField, Value, When
 from django.views.decorators.http import (
     require_POST,
 )
 
-from .forms import AnswerForm
 from .models import (
     GameQuestion,
     GameSession,
+    OperationGenerationSettings,
     UserGameStatistics,
 )
 from .services.exceptions import GameServiceError
@@ -37,6 +38,20 @@ from .services.review import (
 )
 from .services.statistics import (
     get_statistics_dashboard_data,
+)
+from .services.generator import (
+    operation_is_enabled_for_mode,
+)
+from .services.generator_exceptions import (
+    QuestionGenerationError,
+)
+from .services.generation_settings import (
+    create_default_generation_settings,
+)
+from .forms import (
+    AnswerForm,
+    OperationGenerationSettingsFormSet,
+    UserGenerationSettingsForm,
 )
 
 
@@ -67,6 +82,28 @@ def mode_select(request):
         )
     )
 
+    generation_settings = (
+        request.user.generation_settings
+    )
+
+    enabled_operations = {
+        operation.operation
+        for operation
+        in generation_settings.operations.filter(
+            is_enabled=True,
+        )
+    }
+
+    mixed_mode_enabled = (
+        generation_settings
+        .operations
+        .filter(
+            is_enabled=True,
+            mixed_mode_weight__gt=0,
+        )
+        .exists()
+    )
+
     return render(
         request,
         "game/mode_select.html",
@@ -76,26 +113,51 @@ def mode_select(request):
                     "value": GameSession.Mode.ADD,
                     "title": "Сложение",
                     "symbol": "+",
+                    "enabled": (
+                        OperationGenerationSettings
+                        .Operation
+                        .ADD
+                        in enabled_operations
+                    ),
                 },
                 {
                     "value": GameSession.Mode.SUB,
                     "title": "Вычитание",
                     "symbol": "−",
+                    "enabled": (
+                        OperationGenerationSettings
+                        .Operation
+                        .SUB
+                        in enabled_operations
+                    ),
                 },
                 {
                     "value": GameSession.Mode.MUL,
                     "title": "Умножение",
                     "symbol": "×",
+                    "enabled": (
+                        OperationGenerationSettings
+                        .Operation
+                        .MUL
+                        in enabled_operations
+                    ),
                 },
                 {
                     "value": GameSession.Mode.DIV,
                     "title": "Деление",
                     "symbol": ":",
+                    "enabled": (
+                        OperationGenerationSettings
+                        .Operation
+                        .DIV
+                        in enabled_operations
+                    ),
                 },
                 {
                     "value": GameSession.Mode.ALL,
                     "title": "Все действия",
                     "symbol": "±",
+                    "enabled": mixed_mode_enabled,
                 },
             ],
             "statistics": statistics,
@@ -112,6 +174,19 @@ def start(request, mode):
         raise Http404(
             "Неизвестный игровой режим."
         )
+    if not operation_is_enabled_for_mode(
+            user=request.user,
+            mode=mode,
+    ):
+        messages.error(
+            request,
+            (
+                "Этот игровой режим отключён "
+                "в ваших настройках генератора."
+            ),
+        )
+
+        return redirect("game:mode_select")
 
     start_game_session(
         user=request.user,
@@ -162,6 +237,19 @@ def play(request):
         )
 
         return redirect("game:mode_select")
+
+    except QuestionGenerationError as error:
+        messages.error(
+            request,
+            (
+                "Не удалось создать пример: "
+                f"{error}"
+            ),
+        )
+
+        return redirect(
+            "game:mode_select"
+        )
 
     except GameServiceError:
         messages.warning(
@@ -463,5 +551,119 @@ def session_detail(
         {
             "game_session": game_session,
             "page_obj": page,
+        },
+    )
+
+@login_required
+@transaction.atomic
+def generation_settings(request):
+    settings_object = (
+        create_default_generation_settings(
+            user=request.user,
+        )
+    )
+
+    operations_queryset = (
+        settings_object
+        .operations
+        .annotate(
+            display_order=Case(
+                When(
+                    operation=(
+                        OperationGenerationSettings
+                        .Operation.ADD
+                    ),
+                    then=Value(1),
+                ),
+                When(
+                    operation=(
+                        OperationGenerationSettings
+                        .Operation.SUB
+                    ),
+                    then=Value(2),
+                ),
+                When(
+                    operation=(
+                        OperationGenerationSettings
+                        .Operation.MUL
+                    ),
+                    then=Value(3),
+                ),
+                When(
+                    operation=(
+                        OperationGenerationSettings
+                        .Operation.DIV
+                    ),
+                    then=Value(4),
+                ),
+                default=Value(99),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("display_order")
+    )
+
+    if request.method == "POST":
+        form = UserGenerationSettingsForm(
+            request.POST,
+            instance=settings_object,
+        )
+
+        operation_formset = (
+            OperationGenerationSettingsFormSet(
+                request.POST,
+                instance=settings_object,
+                queryset=operations_queryset,
+                prefix="operations",
+            )
+        )
+
+        if (
+            form.is_valid()
+            and operation_formset.is_valid()
+        ):
+            settings_object = form.save()
+
+            operation_formset.instance = (
+                settings_object
+            )
+
+            operation_formset.save()
+
+            messages.success(
+                request,
+                (
+                    "Настройки генерации примеров "
+                    "сохранены."
+                ),
+            )
+
+            return redirect(
+                "game:generation_settings"
+            )
+    else:
+        form = UserGenerationSettingsForm(
+            instance=settings_object,
+        )
+
+        operation_formset = (
+            OperationGenerationSettingsFormSet(
+                instance=settings_object,
+                queryset=operations_queryset,
+                prefix="operations",
+            )
+        )
+
+    return render(
+        request,
+        "game/generation_settings.html",
+        {
+            "form": form,
+            "operation_formset": (
+                operation_formset
+            ),
+            "settings_object": (
+                settings_object
+            ),
         },
     )

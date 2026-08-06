@@ -19,7 +19,10 @@ from .exceptions import (
     QuestionAlreadyAnsweredError,
     QuestionDoesNotBelongToUserError,
 )
-from .generator import generate_question
+from .generator import (
+    build_identity_key,
+    generate_question,
+)
 
 
 DEFAULT_CORRECT_ANSWERS_PER_STAR = 10
@@ -122,6 +125,42 @@ def get_active_session(*, user) -> GameSession | None:
         .first()
     )
 
+def get_recent_question_identity_keys(
+    *,
+    user,
+    limit: int,
+) -> set[tuple[str, int, int]]:
+    """
+    Возвращает ключи последних показанных вопросов.
+
+    Учитываются и отвеченные, и текущие вопросы.
+    """
+    safe_limit = min(
+        max(int(limit), 1),
+        500,
+    )
+
+    recent_questions = (
+        GameQuestion.objects
+        .filter(
+            session__user=user,
+        )
+        .order_by("-shown_at")
+        .values(
+            "operation",
+            "num1",
+            "num2",
+        )[:safe_limit]
+    )
+
+    return {
+        build_identity_key(
+            operation=row["operation"],
+            num1=row["num1"],
+            num2=row["num2"],
+        )
+        for row in recent_questions
+    }
 
 @transaction.atomic
 def get_or_create_current_question(
@@ -179,8 +218,31 @@ def get_or_create_current_question(
         or 0
     )
 
+    generation_settings = (
+        game_session.user.generation_settings
+    )
+
+    recent_identity_keys = set()
+
+    if (
+            generation_settings
+                    .avoid_recent_duplicates
+    ):
+        recent_identity_keys = (
+            get_recent_question_identity_keys(
+                user=user,
+                limit=(
+                    generation_settings
+                    .recent_questions_limit
+                ),
+            )
+        )
+
     generated = generate_question(
-        game_session.mode
+        game_session=game_session,
+        recent_identity_keys=(
+            recent_identity_keys
+        ),
     )
 
     question = GameQuestion.objects.create(

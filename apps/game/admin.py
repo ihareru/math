@@ -3,8 +3,10 @@ from django.contrib import admin
 from .models import (
     GameQuestion,
     GameSession,
+    OperationGenerationSettings,
     StarTransaction,
     UserGameStatistics,
+    UserGenerationSettings,
 )
 
 
@@ -156,3 +158,91 @@ class StarTransactionAdmin(admin.ModelAdmin):
     readonly_fields = [
         "created_at",
     ]
+
+
+class OperationGenerationSettingsInline(
+    admin.TabularInline
+):
+    model = OperationGenerationSettings
+    extra = 0
+
+    fields = [
+        "operation",
+        "is_enabled",
+        "mixed_mode_weight",
+        "first_operand_min",
+        "first_operand_max",
+        "second_operand_min",
+        "second_operand_max",
+        "operands_count",
+        "minimum_answer",
+        "maximum_answer",
+        "allow_negative_result",
+        "allow_remainder",
+    ]
+
+
+@admin.register(UserGenerationSettings)
+class UserGenerationSettingsAdmin(
+    admin.ModelAdmin
+):
+    list_display = [
+        "user",
+        "avoid_recent_duplicates",
+        "recent_questions_limit",
+        "auto_increase_difficulty",
+        "difficulty_level",
+    ]
+
+    list_filter = [
+        "avoid_recent_duplicates",
+        "auto_increase_difficulty",
+    ]
+
+    search_fields = [
+        "user__display_name",
+        "user__email",
+    ]
+
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+    ]
+
+    inlines = [
+        OperationGenerationSettingsInline,
+    ]
+
+    @admin.display(
+        description="Текущий уровень",
+    )
+    def difficulty_level(self, obj):
+        return obj.current_difficulty_level
+
+
+@admin.register(OperationGenerationSettings)
+class OperationGenerationSettingsAdmin(
+    admin.ModelAdmin
+):
+    list_display = [
+        "generation_settings",
+        "operation",
+        "is_enabled",
+        "mixed_mode_weight",
+        "first_operand_min",
+        "first_operand_max",
+        "second_operand_min",
+        "second_operand_max",
+    ]
+
+    list_filter = [
+        "operation",
+        "is_enabled",
+    ]
+
+    search_fields = [
+        "generation_settings__user__display_name",
+        "generation_settings__user__email",
+    ]
+
+

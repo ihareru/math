@@ -57,8 +57,16 @@
                 {% csrf_token %}
 
                 <button
-                    class="game-mode-card"
+                    class="
+                    game-mode-card
+                    {% if not mode.enabled %}
+                        game-mode-card--disabled
+                    {% endif %}
+                    "
                     type="submit"
+                    {% if not mode.enabled %}
+                        disabled
+                    {% endif %}
                 >
                     <span class="game-mode-card__symbol">
                         {{ mode.symbol }}
@@ -113,6 +121,12 @@
     </section>
 
     <div class="form-actions">
+        <a
+            class="button button--secondary"
+            href="{% url 'game:generation_settings' %}"
+        >
+            Настройки примеров
+        </a>
         <a
             class="button button--secondary"
             href="{% url 'game:statistics' %}"

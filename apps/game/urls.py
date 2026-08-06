@@ -13,6 +13,11 @@ urlpatterns = [
         name="mode_select",
     ),
     path(
+        "settings/",
+        views.generation_settings,
+        name="generation_settings",
+    ),
+    path(
         "statistics/",
         views.statistics_dashboard,
         name="statistics",
