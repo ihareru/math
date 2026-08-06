@@ -216,6 +216,9 @@ def get_or_create_review_question(
         operation=source_question.operation,
         num1=source_question.num1,
         num2=source_question.num2,
+        operands=list(
+            source_question.effective_operands
+        ),
         correct_answer=source_question.correct_answer,
         is_review=True,
         source_question=source_question,

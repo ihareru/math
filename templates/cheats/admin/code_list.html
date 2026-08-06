@@ -75,7 +75,7 @@
                         <th>Активаций</th>
                         <th>Пользователей</th>
                         <th>Срок</th>
-                        <th></th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
 
@@ -131,42 +131,44 @@
                                 {% endif %}
                             </td>
 
-                            <td class="table-actions">
-                                <a
-                                    href="{% url 'cheats:admin_code_edit' cheat.pk %}"
-                                >
-                                    Изменить
-                                </a>
-
-                                <a
-                                    href="{% url 'cheats:admin_code_activations' cheat.pk %}"
-                                >
-                                    Активации
-                                </a>
-
-                                <form
-                                    action="{% url 'cheats:admin_code_toggle' cheat.pk %}"
-                                    method="post"
-                                >
-                                    {% csrf_token %}
-
-                                    <input
-                                        type="hidden"
-                                        name="next"
-                                        value="{{ request.get_full_path }}"
+                            <td>
+                                <div class="table-actions">
+                                    <a
+                                        href="{% url 'cheats:admin_code_edit' cheat.pk %}"
                                     >
+                                        Изменить
+                                    </a>
 
-                                    <button
-                                        class="link-button"
-                                        type="submit"
+                                    <a
+                                        href="{% url 'cheats:admin_code_activations' cheat.pk %}"
                                     >
-                                        {% if cheat.is_active %}
-                                            Отключить
-                                        {% else %}
-                                            Включить
-                                        {% endif %}
-                                    </button>
-                                </form>
+                                        Активации
+                                    </a>
+
+                                    <form
+                                        action="{% url 'cheats:admin_code_toggle' cheat.pk %}"
+                                        method="post"
+                                    >
+                                        {% csrf_token %}
+
+                                        <input
+                                            type="hidden"
+                                            name="next"
+                                            value="{{ request.get_full_path }}"
+                                        >
+
+                                        <button
+                                            class="link-button"
+                                            type="submit"
+                                        >
+                                            {% if cheat.is_active %}
+                                                Отключить
+                                            {% else %}
+                                                Включить
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}

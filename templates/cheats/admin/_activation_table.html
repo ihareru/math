@@ -9,7 +9,7 @@
                     <th>Окончание</th>
                     <th>Статус</th>
                     <th>IP</th>
-                    <th></th>
+                    <th>Действия</th>
                 </tr>
             </thead>
 
@@ -66,25 +66,29 @@
 
                         <td>
                             {% if activation.is_active %}
-                                <form
-                                    action="{% url 'cheats:admin_activation_disable' activation.pk %}"
-                                    method="post"
-                                >
-                                    {% csrf_token %}
-
-                                    <input
-                                        type="hidden"
-                                        name="next"
-                                        value="{{ request.get_full_path }}"
+                                <div class="table-actions">
+                                    <form
+                                        action="{% url 'cheats:admin_activation_disable' activation.pk %}"
+                                        method="post"
                                     >
+                                        {% csrf_token %}
 
-                                    <button
-                                        class="link-button link-button--danger"
-                                        type="submit"
-                                    >
-                                        Отключить
-                                    </button>
-                                </form>
+                                        <input
+                                            type="hidden"
+                                            name="next"
+                                            value="{{ request.get_full_path }}"
+                                        >
+
+                                        <button
+                                            class="link-button link-button--danger"
+                                            type="submit"
+                                        >
+                                            Отключить
+                                        </button>
+                                    </form>
+                                </div>
+                            {% else %}
+                                —
                             {% endif %}
                         </td>
                     </tr>

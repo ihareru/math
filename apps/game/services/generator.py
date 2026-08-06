@@ -23,41 +23,38 @@ MAX_GENERATION_ATTEMPTS = 500
 @dataclass(frozen=True)
 class GeneratedQuestion:
     operation: str
-    num1: int
-    num2: int
+    operands: tuple[int, ...]
     correct_answer: int
 
     @property
-    def identity_key(self) -> tuple[str, int, int]:
-        """
-        Нормализованный ключ примера.
+    def num1(self) -> int:
+        return self.operands[0]
 
-        Для сложения и умножения:
-        5 + 9 и 9 + 5 считаются одинаковыми.
+    @property
+    def num2(self) -> int:
+        return self.operands[1]
 
-        Для вычитания и деления порядок важен.
+    @property
+    def identity_key(self) -> tuple:
         """
+        Ключ примера для исключения повторов.
+
+        Для сложения и умножения порядок операндов
+        не имеет значения.
+        """
+        operands = self.operands
+
         if self.operation in {
             GameQuestion.Operation.ADD,
             GameQuestion.Operation.MUL,
         }:
-            first, second = sorted(
-                (
-                    self.num1,
-                    self.num2,
-                )
-            )
-
-            return (
-                self.operation,
-                first,
-                second,
+            operands = tuple(
+                sorted(operands)
             )
 
         return (
             self.operation,
-            self.num1,
-            self.num2,
+            *operands,
         )
 
 
@@ -138,33 +135,37 @@ def generate_question(
 def build_identity_key(
     *,
     operation: str,
-    num1: int,
-    num2: int,
-) -> tuple[str, int, int]:
+    num1: int | None = None,
+    num2: int | None = None,
+    operands=None,
+) -> tuple:
     """
-    Создаёт ключ существующего GameQuestion.
+    Создаёт нормализованный ключ примера.
     """
+    if (
+        isinstance(operands, list)
+        and len(operands) >= 2
+    ):
+        normalized_operands = tuple(
+            operands
+        )
+    else:
+        normalized_operands = (
+            num1,
+            num2,
+        )
+
     if operation in {
         GameQuestion.Operation.ADD,
         GameQuestion.Operation.MUL,
     }:
-        first, second = sorted(
-            (
-                num1,
-                num2,
-            )
-        )
-
-        return (
-            operation,
-            first,
-            second,
+        normalized_operands = tuple(
+            sorted(normalized_operands)
         )
 
     return (
         operation,
-        num1,
-        num2,
+        *normalized_operands,
     )
 
 
@@ -349,18 +350,31 @@ def _generate_addition(
         difficulty_level=difficulty_level,
     )
 
+    operands_count = min(
+        max(settings_object.operands_count, 2),
+        4,
+    )
+
     for _ in range(MAX_GENERATION_ATTEMPTS):
-        num1 = random.randint(
-            first_min,
-            first_max,
-        )
+        operands = [
+            random.randint(
+                first_min,
+                first_max,
+            )
+        ]
 
-        num2 = random.randint(
-            second_min,
-            second_max,
-        )
+        for _ in range(operands_count - 1):
+            operands.append(
+                random.randint(
+                    second_min,
+                    second_max,
+                )
+            )
 
-        answer = num1 + num2
+        answer = calculate_answer(
+            operation=GameQuestion.Operation.ADD,
+            operands=operands,
+        )
 
         if _answer_is_allowed(
             answer=answer,
@@ -368,8 +382,7 @@ def _generate_addition(
         ):
             return GeneratedQuestion(
                 operation=GameQuestion.Operation.ADD,
-                num1=num1,
-                num2=num2,
+                operands=tuple(operands),
                 correct_answer=answer,
             )
 
@@ -396,25 +409,39 @@ def _generate_subtraction(
         difficulty_level=difficulty_level,
     )
 
+    operands_count = min(
+        max(settings_object.operands_count, 2),
+        4,
+    )
+
     for _ in range(MAX_GENERATION_ATTEMPTS):
-        num1 = random.randint(
-            first_min,
-            first_max,
+        operands = [
+            random.randint(
+                first_min,
+                first_max,
+            )
+        ]
+
+        for _ in range(operands_count - 1):
+            operands.append(
+                random.randint(
+                    second_min,
+                    second_max,
+                )
+            )
+
+        if not settings_object.allow_negative_result:
+            remaining_sum = sum(
+                operands[1:]
+            )
+
+            if operands[0] < remaining_sum:
+                continue
+
+        answer = calculate_answer(
+            operation=GameQuestion.Operation.SUB,
+            operands=operands,
         )
-
-        num2 = random.randint(
-            second_min,
-            second_max,
-        )
-
-        if (
-            not settings_object
-            .allow_negative_result
-            and num2 > num1
-        ):
-            num1, num2 = num2, num1
-
-        answer = num1 - num2
 
         if _answer_is_allowed(
             answer=answer,
@@ -422,8 +449,7 @@ def _generate_subtraction(
         ):
             return GeneratedQuestion(
                 operation=GameQuestion.Operation.SUB,
-                num1=num1,
-                num2=num2,
+                operands=tuple(operands),
                 correct_answer=answer,
             )
 
@@ -450,18 +476,31 @@ def _generate_multiplication(
         difficulty_level=difficulty_level,
     )
 
+    operands_count = min(
+        max(settings_object.operands_count, 2),
+        4,
+    )
+
     for _ in range(MAX_GENERATION_ATTEMPTS):
-        num1 = random.randint(
-            first_min,
-            first_max,
-        )
+        operands = [
+            random.randint(
+                first_min,
+                first_max,
+            )
+        ]
 
-        num2 = random.randint(
-            second_min,
-            second_max,
-        )
+        for _ in range(operands_count - 1):
+            operands.append(
+                random.randint(
+                    second_min,
+                    second_max,
+                )
+            )
 
-        answer = num1 * num2
+        answer = calculate_answer(
+            operation=GameQuestion.Operation.MUL,
+            operands=operands,
+        )
 
         if _answer_is_allowed(
             answer=answer,
@@ -469,8 +508,7 @@ def _generate_multiplication(
         ):
             return GeneratedQuestion(
                 operation=GameQuestion.Operation.MUL,
-                num1=num1,
-                num2=num2,
+                operands=tuple(operands),
                 correct_answer=answer,
             )
 
@@ -538,8 +576,10 @@ def _generate_division(
         ):
             return GeneratedQuestion(
                 operation=GameQuestion.Operation.DIV,
-                num1=dividend,
-                num2=divisor,
+                operands=(
+                    dividend,
+                    divisor,
+                ),
                 correct_answer=correct_answer,
             )
 
@@ -557,16 +597,21 @@ def _scaled_range(
 ) -> tuple[int, int]:
     """
     При автоматическом повышении сложности
-    постепенно расширяет верхнюю границу.
+    постепенно расширяет верхнюю границу диапазона.
 
-    Уровень 1 использует исходный диапазон.
-    Каждый следующий уровень добавляет 10%
-    исходной ширины диапазона, минимум 1.
+    Фиксированный диапазон, например 10–10,
+    никогда не расширяется. Это позволяет явно
+    задавать конкретное число в настройках.
     """
     if maximum < minimum:
         raise InvalidGenerationSettingsError(
             "Максимум диапазона меньше минимума."
         )
+
+    # Если пользователь задал конкретное число,
+    # автоматическая сложность не должна его менять.
+    if minimum == maximum:
+        return minimum, maximum
 
     safe_level = max(
         1,
@@ -589,10 +634,7 @@ def _scaled_range(
         * (safe_level - 1)
     )
 
-    return (
-        minimum,
-        scaled_maximum,
-    )
+    return minimum, scaled_maximum
 
 
 def _answer_is_allowed(
@@ -681,4 +723,59 @@ def operation_is_enabled_for_mode(
             is_enabled=True,
         )
         .exists()
+    )
+
+def calculate_answer(
+    *,
+    operation: str,
+    operands,
+) -> int:
+    """
+    Вычисляет ответ для последовательности операндов.
+    """
+    if len(operands) < 2:
+        raise InvalidGenerationSettingsError(
+            "Недостаточно операндов."
+        )
+
+    if operation == GameQuestion.Operation.ADD:
+        return sum(operands)
+
+    if operation == GameQuestion.Operation.SUB:
+        result = operands[0]
+
+        for operand in operands[1:]:
+            result -= operand
+
+        return result
+
+    if operation == GameQuestion.Operation.MUL:
+        result = 1
+
+        for operand in operands:
+            result *= operand
+
+        return result
+
+    if operation == GameQuestion.Operation.DIV:
+        result = operands[0]
+
+        for operand in operands[1:]:
+            if operand == 0:
+                raise InvalidGenerationSettingsError(
+                    "Деление на ноль невозможно."
+                )
+
+            if result % operand != 0:
+                raise InvalidGenerationSettingsError(
+                    "Деление должно выполняться "
+                    "без остатка."
+                )
+
+            result //= operand
+
+        return result
+
+    raise InvalidGenerationSettingsError(
+        "Неизвестная математическая операция."
     )

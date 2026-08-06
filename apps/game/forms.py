@@ -131,6 +131,7 @@ class OperationGenerationSettingsForm(
         fields = [
             "is_enabled",
             "mixed_mode_weight",
+            "operands_count",
             "first_operand_min",
             "first_operand_max",
             "second_operand_min",
@@ -154,6 +155,16 @@ class OperationGenerationSettingsForm(
                         "max": "1000",
                     }
                 )
+            ),
+            "operands_count": forms.Select(
+                attrs={
+                    "class": "form-control",
+                },
+                choices=[
+                    (2, "2 числа"),
+                    (3, "3 числа"),
+                    (4, "4 числа"),
+                ],
             ),
             "first_operand_min": (
                 forms.NumberInput(
@@ -215,6 +226,22 @@ class OperationGenerationSettingsForm(
             and self.instance.pk
             else None
         )
+
+        if (
+            operation
+            == OperationGenerationSettings
+            .Operation.DIV
+        ):
+            self.fields[
+                "operands_count"
+            ].disabled = True
+
+            self.fields[
+                "operands_count"
+            ].help_text = (
+                "Для деления пока поддерживаются "
+                "только два числа."
+            )
 
         if (
             operation
@@ -425,6 +452,7 @@ OperationGenerationSettingsFormSet = (
         fields=[
             "is_enabled",
             "mixed_mode_weight",
+            "operands_count",
             "first_operand_min",
             "first_operand_max",
             "second_operand_min",

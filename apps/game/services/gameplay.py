@@ -150,6 +150,7 @@ def get_recent_question_identity_keys(
             "operation",
             "num1",
             "num2",
+            "operands",
         )[:safe_limit]
     )
 
@@ -158,6 +159,7 @@ def get_recent_question_identity_keys(
             operation=row["operation"],
             num1=row["num1"],
             num2=row["num2"],
+            operands=row["operands"],
         )
         for row in recent_questions
     }
@@ -251,6 +253,9 @@ def get_or_create_current_question(
         operation=generated.operation,
         num1=generated.num1,
         num2=generated.num2,
+        operands=list(
+            generated.operands
+        ),
         correct_answer=generated.correct_answer,
     )
 

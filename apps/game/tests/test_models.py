@@ -90,3 +90,47 @@ class GameModelTests(TestCase):
 
         with self.assertRaises(ValidationError):
             transaction.full_clean()
+
+    def test_question_expression_with_three_operands(
+            self,
+    ):
+        user = User.objects.create_user(
+            email="expression@example.com",
+            password="StrongPassword2026!",
+            display_name="Игрок",
+            email_verified=True,
+            is_active=True,
+        )
+
+        game_session = GameSession.objects.create(
+            user=user,
+            mode=GameSession.Mode.ADD,
+        )
+
+        question = GameQuestion.objects.create(
+            session=game_session,
+            sequence_number=1,
+            operation=GameQuestion.Operation.ADD,
+            num1=5,
+            num2=7,
+            operands=[
+                5,
+                7,
+                9,
+            ],
+            correct_answer=21,
+        )
+
+        self.assertEqual(
+            question.expression,
+            "5 + 7 + 9",
+        )
+
+        self.assertEqual(
+            question.effective_operands,
+            [
+                5,
+                7,
+                9,
+            ],
+        )

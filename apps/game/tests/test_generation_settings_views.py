@@ -121,6 +121,12 @@ class GenerationSettingsViewTests(TestCase):
             ] = "25"
 
             data[
+                f"{prefix}-operands_count"
+            ] = str(
+                operation.operands_count
+            )
+
+            data[
                 f"{prefix}-first_operand_min"
             ] = str(
                 operation.first_operand_min

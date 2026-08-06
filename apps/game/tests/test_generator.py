@@ -10,6 +10,9 @@ from apps.game.services.generator import (
     build_identity_key,
     generate_question,
 )
+from apps.game.services.generator_exceptions import (
+    InvalidGenerationSettingsError,
+)
 
 
 class ConfigurableQuestionGeneratorTests(
@@ -75,7 +78,7 @@ class ConfigurableQuestionGeneratorTests(
         )
 
     def test_subtraction_does_not_go_negative(
-        self,
+            self,
     ):
         settings_object = (
             self.get_operation_settings(
@@ -85,13 +88,19 @@ class ConfigurableQuestionGeneratorTests(
             )
         )
 
-        settings_object.first_operand_min = 1
-        settings_object.first_operand_max = 5
-        settings_object.second_operand_min = 6
+        # Первое число должно позволять вычесть
+        # второе без получения отрицательного результата.
+        settings_object.first_operand_min = 10
+        settings_object.first_operand_max = 20
+
+        settings_object.second_operand_min = 1
         settings_object.second_operand_max = 10
+
+        settings_object.operands_count = 2
         settings_object.allow_negative_result = False
         settings_object.minimum_answer = 0
-        settings_object.maximum_answer = 20
+        settings_object.maximum_answer = 19
+
         settings_object.save()
 
         game_session = self.create_session(
@@ -106,6 +115,11 @@ class ConfigurableQuestionGeneratorTests(
             self.assertGreaterEqual(
                 question.correct_answer,
                 0,
+            )
+
+            self.assertGreaterEqual(
+                question.operands[0],
+                question.operands[1],
             )
 
     def test_subtraction_can_be_negative(self):
@@ -297,3 +311,308 @@ class ConfigurableQuestionGeneratorTests(
                 question.operation,
                 GameQuestion.Operation.ADD,
             )
+
+    def test_addition_with_three_operands(self):
+        settings_object = (
+            self.get_operation_settings(
+                OperationGenerationSettings
+                .Operation.ADD
+            )
+        )
+
+        settings_object.first_operand_min = 10
+        settings_object.first_operand_max = 10
+        settings_object.second_operand_min = 5
+        settings_object.second_operand_max = 5
+        settings_object.operands_count = 3
+        settings_object.minimum_answer = 20
+        settings_object.maximum_answer = 20
+        settings_object.save()
+
+        game_session = self.create_session(
+            GameSession.Mode.ADD
+        )
+
+        question = generate_question(
+            game_session=game_session,
+        )
+
+        self.assertEqual(
+            question.operands,
+            (
+                10,
+                5,
+                5,
+            ),
+        )
+
+        self.assertEqual(
+            question.correct_answer,
+            20,
+        )
+
+    def test_subtraction_with_four_operands(
+            self,
+    ):
+        settings_object = (
+            self.get_operation_settings(
+                OperationGenerationSettings
+                .Operation.SUB
+            )
+        )
+
+        settings_object.first_operand_min = 20
+        settings_object.first_operand_max = 20
+        settings_object.second_operand_min = 3
+        settings_object.second_operand_max = 3
+        settings_object.operands_count = 4
+        settings_object.minimum_answer = 11
+        settings_object.maximum_answer = 11
+        settings_object.allow_negative_result = False
+        settings_object.save()
+
+        game_session = self.create_session(
+            GameSession.Mode.SUB
+        )
+
+        question = generate_question(
+            game_session=game_session,
+        )
+
+        self.assertEqual(
+            question.operands,
+            (
+                20,
+                3,
+                3,
+                3,
+            ),
+        )
+
+        self.assertEqual(
+            question.correct_answer,
+            11,
+        )
+
+    def test_impossible_non_negative_subtraction_raises_error(
+            self,
+    ):
+        settings_object = (
+            self.get_operation_settings(
+                OperationGenerationSettings
+                .Operation
+                .SUB
+            )
+        )
+
+        settings_object.first_operand_min = 1
+        settings_object.first_operand_max = 5
+
+        settings_object.second_operand_min = 6
+        settings_object.second_operand_max = 10
+
+        settings_object.operands_count = 2
+        settings_object.allow_negative_result = False
+        settings_object.minimum_answer = 0
+        settings_object.maximum_answer = 20
+
+        settings_object.save()
+
+        game_session = self.create_session(
+            GameSession.Mode.SUB
+        )
+
+        with self.assertRaises(
+                InvalidGenerationSettingsError
+        ):
+            generate_question(
+                game_session=game_session,
+            )
+
+
+    def test_fixed_range_is_not_scaled_by_difficulty(
+        self,
+    ):
+        from apps.game.services.generator import (
+            _scaled_range,
+        )
+
+        minimum, maximum = _scaled_range(
+            minimum=10,
+            maximum=10,
+            difficulty_level=25,
+        )
+
+        self.assertEqual(
+            minimum,
+            10,
+        )
+
+        self.assertEqual(
+            maximum,
+            10,
+        )
+
+    def test_fixed_multi_operand_addition_is_not_scaled(
+            self,
+    ):
+        settings_object = (
+            self.get_operation_settings(
+                OperationGenerationSettings
+                .Operation.ADD
+            )
+        )
+
+        generation_settings = (
+            self.user.generation_settings
+        )
+
+        generation_settings.auto_increase_difficulty = True
+        generation_settings.correct_answers_per_level = 1
+        generation_settings.maximum_difficulty_level = 100
+        generation_settings.save()
+
+        statistics = self.user.game_statistics
+        statistics.total_correct = 50
+        statistics.save()
+
+        settings_object.first_operand_min = 10
+        settings_object.first_operand_max = 10
+        settings_object.second_operand_min = 5
+        settings_object.second_operand_max = 5
+        settings_object.operands_count = 3
+        settings_object.minimum_answer = 20
+        settings_object.maximum_answer = 20
+        settings_object.save()
+
+        game_session = self.create_session(
+            GameSession.Mode.ADD
+        )
+
+        question = generate_question(
+            game_session=game_session,
+        )
+
+        self.assertEqual(
+            question.operands,
+            (
+                10,
+                5,
+                5,
+            ),
+        )
+
+        self.assertEqual(
+            question.correct_answer,
+            20,
+        )
+
+    def test_fixed_multi_operand_subtraction_is_not_scaled(
+            self,
+    ):
+        generation_settings = (
+            self.user.generation_settings
+        )
+
+        generation_settings.auto_increase_difficulty = True
+        generation_settings.correct_answers_per_level = 1
+        generation_settings.maximum_difficulty_level = 100
+        generation_settings.save()
+
+        statistics = self.user.game_statistics
+        statistics.total_correct = 50
+        statistics.save()
+
+        settings_object = (
+            self.get_operation_settings(
+                OperationGenerationSettings
+                .Operation.SUB
+            )
+        )
+
+        settings_object.first_operand_min = 20
+        settings_object.first_operand_max = 20
+        settings_object.second_operand_min = 3
+        settings_object.second_operand_max = 3
+        settings_object.operands_count = 4
+        settings_object.minimum_answer = 11
+        settings_object.maximum_answer = 11
+        settings_object.allow_negative_result = False
+        settings_object.save()
+
+        game_session = self.create_session(
+            GameSession.Mode.SUB
+        )
+
+        question = generate_question(
+            game_session=game_session,
+        )
+
+        self.assertEqual(
+            question.operands,
+            (
+                20,
+                3,
+                3,
+                3,
+            ),
+        )
+
+        self.assertEqual(
+            question.correct_answer,
+            11,
+        )
+
+    def test_fixed_multi_operand_multiplication_is_not_scaled(
+            self,
+    ):
+        generation_settings = (
+            self.user.generation_settings
+        )
+
+        generation_settings.auto_increase_difficulty = True
+        generation_settings.correct_answers_per_level = 1
+        generation_settings.maximum_difficulty_level = 100
+        generation_settings.save()
+
+        statistics = self.user.game_statistics
+        statistics.total_correct = 50
+        statistics.save()
+
+        settings_object = (
+            self.get_operation_settings(
+                OperationGenerationSettings
+                .Operation.MUL
+            )
+        )
+
+        settings_object.first_operand_min = 2
+        settings_object.first_operand_max = 2
+        settings_object.second_operand_min = 3
+        settings_object.second_operand_max = 3
+        settings_object.operands_count = 3
+        settings_object.minimum_answer = 18
+        settings_object.maximum_answer = 18
+        settings_object.save()
+
+        game_session = self.create_session(
+            GameSession.Mode.MUL
+        )
+
+        question = generate_question(
+            game_session=game_session,
+        )
+
+        self.assertEqual(
+            question.operands,
+            (
+                2,
+                3,
+                3,
+            ),
+        )
+
+        self.assertEqual(
+            question.correct_answer,
+            18,
+        )

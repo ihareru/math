@@ -1815,3 +1815,135 @@ label.settings-checkbox-card {
         width: 100%;
     }
 }
+
+/* =========================================================
+   Административные таблицы чит-кодов
+   ========================================================= */
+
+.cheat-admin-page .history-table-wrapper {
+    width: 100%;
+    margin-top: 1.25rem;
+    overflow-x: auto;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+
+.cheat-admin-page .history-table {
+    width: 100%;
+    min-width: 1050px;
+    border-collapse: collapse;
+    table-layout: auto;
+    background: #ffffff;
+}
+
+.cheat-admin-page .history-table th,
+.cheat-admin-page .history-table td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+    text-align: left;
+}
+
+.cheat-admin-page .history-table th {
+    color: var(--text-color);
+    background: #f1f5fb;
+    font-size: 0.9rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.cheat-admin-page .history-table tbody tr {
+    background: #ffffff;
+}
+
+.cheat-admin-page .history-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.cheat-admin-page .history-table tbody tr:hover {
+    background: #edf4ff;
+}
+
+.cheat-admin-page .history-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+/* Код и короткие числовые значения не переносятся */
+.cheat-admin-page .history-table td:first-child,
+.cheat-admin-page .history-table td:nth-last-child(-n + 3) {
+    white-space: nowrap;
+}
+
+/* Награды могут переноситься на несколько строк */
+.cheat-admin-page .history-table td:nth-child(4) {
+    min-width: 260px;
+    white-space: normal;
+}
+
+.cheat-admin-page .cheat-reward-badge {
+    display: inline-block;
+    margin: 0.15rem 0.2rem 0.15rem 0;
+    white-space: normal;
+}
+
+/* Столбец действий */
+.cheat-admin-page .table-actions {
+    display: flex;
+    min-width: 220px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.8rem;
+}
+
+.cheat-admin-page .table-actions a,
+.cheat-admin-page .table-actions .link-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    color: var(--primary-color);
+    background: transparent;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.cheat-admin-page .table-actions .link-button:hover,
+.cheat-admin-page .table-actions a:hover {
+    text-decoration: none;
+}
+
+/* Таблица активаций */
+.cheat-admin-page .history-table small {
+    color: var(--muted-color);
+}
+
+.cheat-admin-page .cheat-status {
+    white-space: nowrap;
+}
+
+/* Пагинация не прилипает к таблице */
+.cheat-admin-page .pagination {
+    margin-top: 1.25rem;
+}
+
+@media (max-width: 760px) {
+    .cheat-admin-page .history-table-wrapper {
+        border-radius: 10px;
+    }
+
+    .cheat-admin-page .history-table {
+        min-width: 900px;
+    }
+
+    .cheat-admin-page .history-table th,
+    .cheat-admin-page .history-table td {
+        padding: 0.75rem;
+    }
+
+    .cheat-admin-page .table-actions {
+        min-width: 180px;
+    }
+}

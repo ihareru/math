@@ -231,6 +231,28 @@
                             {% endfor %}
                         </div>
 
+                        <div class="form-group">
+                            <label
+                                for="{{ operation_form.operands_count.id_for_label }}"
+                            >
+                                {{ operation_form.operands_count.label }}
+                            </label>
+
+                            {{ operation_form.operands_count }}
+
+                            {% if operation_form.operands_count.help_text %}
+                                <small class="form-help">
+                                    {{ operation_form.operands_count.help_text }}
+                                </small>
+                            {% endif %}
+
+                            {% for error in operation_form.operands_count.errors %}
+                                <div class="form-errors">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
                         {% if operation_form.instance.operation == "div" %}
                             <div class="operation-help">
                                 <strong>

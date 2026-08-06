@@ -351,6 +351,16 @@ class GameQuestion(models.Model):
         "Второе число",
     )
 
+    operands = models.JSONField(
+        "Операнды",
+        default=list,
+        blank=True,
+        help_text=(
+            "Упорядоченный список чисел примера. "
+            "Например: [5, 7, 9]."
+        ),
+    )
+
     correct_answer = models.IntegerField(
         "Правильный ответ",
     )
@@ -459,8 +469,83 @@ class GameQuestion(models.Model):
             f"{self.expression}"
         )
 
+    def clean(self):
+        super().clean()
+
+        from django.core.exceptions import (
+            ValidationError,
+        )
+
+        if self.operands in (None, []):
+            return
+
+        if not isinstance(self.operands, list):
+            raise ValidationError(
+                {
+                    "operands": (
+                        "Операнды должны быть "
+                        "JSON-массивом."
+                    ),
+                }
+            )
+
+        if not 2 <= len(self.operands) <= 4:
+            raise ValidationError(
+                {
+                    "operands": (
+                        "Пример должен содержать "
+                        "от двух до четырёх операндов."
+                    ),
+                }
+            )
+
+        for operand in self.operands:
+            if (
+                isinstance(operand, bool)
+                or not isinstance(operand, int)
+            ):
+                raise ValidationError(
+                    {
+                        "operands": (
+                            "Все операнды должны быть "
+                            "целыми числами."
+                        ),
+                    }
+                )
+
+        if self.operation == self.Operation.DIV:
+            for divisor in self.operands[1:]:
+                if divisor == 0:
+                    raise ValidationError(
+                        {
+                            "operands": (
+                                "Делитель не может "
+                                "быть равен нулю."
+                            ),
+                        }
+                    )
+
     @property
-    def operator_symbol(self):
+    def effective_operands(self) -> list[int]:
+        """
+        Возвращает операнды нового или старого вопроса.
+
+        Для старых записей, созданных до появления
+        JSON-поля, используются num1 и num2.
+        """
+        if (
+                isinstance(self.operands, list)
+                and len(self.operands) >= 2
+        ):
+            return self.operands
+
+        return [
+            self.num1,
+            self.num2,
+        ]
+
+    @property
+    def operation_symbol(self) -> str:
         symbols = {
             self.Operation.ADD: "+",
             self.Operation.SUB: "−",
@@ -468,14 +553,20 @@ class GameQuestion(models.Model):
             self.Operation.DIV: ":",
         }
 
-        return symbols[self.operation]
+        return symbols.get(
+            self.operation,
+            "?",
+        )
 
     @property
-    def expression(self):
-        return (
-            f"{self.num1} "
-            f"{self.operator_symbol} "
-            f"{self.num2}"
+    def expression(self) -> str:
+        separator = (
+            f" {self.operation_symbol} "
+        )
+
+        return separator.join(
+            str(operand)
+            for operand in self.effective_operands
         )
 
     @property
