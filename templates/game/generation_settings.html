@@ -1,0 +1,620 @@
+{% extends "base.html" %}
+
+{% block title %}
+Настройки примеров — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="generation-settings-page">
+    <div class="generation-settings-header">
+        <div>
+            <h1>Настройки примеров</h1>
+
+            <p>
+                Настройте диапазоны чисел,
+                частоту действий и правила
+                повышения сложности.
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a
+                class="button button--secondary"
+                href="{% url 'game:mode_select' %}"
+            >
+                К выбору режима
+            </a>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'user_settings:detail' %}"
+            >
+                Остальные настройки
+            </a>
+        </div>
+    </div>
+
+    <section class="difficulty-summary">
+        <div>
+            <span>Профиль</span>
+
+            <strong>
+                {{ settings_object.get_difficulty_profile_display }}
+            </strong>
+        </div>
+        <div>
+            <span>
+                Автоматическое повышение
+            </span>
+
+            <strong>
+                {% if settings_object.auto_increase_difficulty %}
+                    Включено
+                {% else %}
+                    Выключено
+                {% endif %}
+            </strong>
+        </div>
+        {% if form.auto_increase_difficulty.value %}
+            <div class="operation-help">
+                <strong>
+                    Обратите внимание
+                </strong>
+
+                <p>
+                    Автоматическое повышение расширяет
+                    верхние границы чисел. Ограничения
+                    минимального и максимального результата
+                    продолжают действовать.
+                </p>
+            </div>
+        {% endif %}
+
+        <div>
+            <span>
+                Ответов на уровень
+            </span>
+
+            <strong>
+                {{ settings_object.correct_answers_per_level }}
+            </strong>
+        </div>
+
+        <div>
+            <span>
+                Максимальный уровень
+            </span>
+
+            <strong>
+                {{ settings_object.maximum_difficulty_level }}
+            </strong>
+        </div>
+    </section>
+
+    <section class="generation-settings-section">
+        <div class="generation-section-header">
+            <div>
+                <h2>Профиль сложности</h2>
+
+                <p>
+                    Выберите готовый набор параметров
+                    или настройте генератор самостоятельно.
+                </p>
+            </div>
+        </div>
+
+        <form
+            action="{% url 'game:apply_generation_profile' %}"
+            method="post"
+        >
+            {% csrf_token %}
+
+            <div class="difficulty-profile-grid">
+                {% for radio in profile_form.profile %}
+                    <label
+                        class="
+                            difficulty-profile-card
+                            {% if radio.data.selected %}
+                                difficulty-profile-card--selected
+                            {% endif %}
+                        "
+                    >
+                        {{ radio.tag }}
+
+                        <span class="difficulty-profile-card__content">
+                            <strong>
+                                {{ radio.choice_label }}
+                            </strong>
+
+                            {% if radio.data.value == "easy" %}
+                                <small>
+                                    Небольшие числа,
+                                    простые вычисления,
+                                    два операнда.
+                                </small>
+
+                            {% elif radio.data.value == "medium" %}
+                                <small>
+                                    Сбалансированный режим
+                                    для регулярных занятий.
+                                </small>
+
+                            {% elif radio.data.value == "hard" %}
+                                <small>
+                                    Большие числа,
+                                    несколько операндов,
+                                    быстрый рост сложности.
+                                </small>
+
+                            {% elif radio.data.value == "custom" %}
+                                <small>
+                                    Использовать собственные
+                                    диапазоны и правила.
+                                </small>
+                            {% endif %}
+                        </span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Применить профиль
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <section class="generation-settings-section">
+        <div class="generation-section-header">
+            <div>
+                <h2>Уровни сложности</h2>
+
+                <p>
+                    Уровень рассчитывается отдельно
+                    для каждого математического действия.
+                </p>
+            </div>
+        </div>
+
+        <div class="difficulty-operation-grid">
+            {% for item in difficulty_progress %}
+                <article
+                    class="
+                        difficulty-operation-card
+                        difficulty-operation-card--{{ item.operation }}
+                    "
+                >
+                    <div class="difficulty-operation-card__header">
+                        <h3>{{ item.title }}</h3>
+
+                        <span class="difficulty-level-badge">
+                            Уровень {{ item.level }}
+                        </span>
+                    </div>
+
+                    <dl>
+                        <div>
+                            <dt>Правильных ответов</dt>
+                            <dd>
+                                {{ item.correct_answers }}
+                            </dd>
+                        </div>
+
+                        {% if settings_object.auto_increase_difficulty %}
+                            <div>
+                                <dt>До следующего уровня</dt>
+                                <dd>
+                                    {% if item.maximum_level_reached %}
+                                        Максимальный уровень
+                                    {% else %}
+                                        {{ item.answers_to_next_level }}
+                                    {% endif %}
+                                </dd>
+                            </div>
+                        {% endif %}
+                    </dl>
+
+                    {% if settings_object.auto_increase_difficulty %}
+                        <div
+                            class="difficulty-progress"
+                            role="progressbar"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="{{ item.progress_percent }}"
+                        >
+                            <div
+                                class="difficulty-progress__value"
+                                style="
+                                    width:
+                                    {{ item.progress_percent }}%;
+                                "
+                            ></div>
+                        </div>
+
+                        <small>
+                            {{ item.progress_percent }}%
+                        </small>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <section class="generation-settings-section">
+            <h2>Общие правила</h2>
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="generation-general-grid">
+                <div class="settings-checkbox-card">
+                    <label>
+                        {{ form.avoid_recent_duplicates }}
+
+                        <span>
+                            {{ form.avoid_recent_duplicates.label }}
+                        </span>
+                    </label>
+
+                    {% if form.avoid_recent_duplicates.help_text %}
+                        <small class="form-help">
+                            {{ form.avoid_recent_duplicates.help_text }}
+                        </small>
+                    {% endif %}
+
+                    {% for error in form.avoid_recent_duplicates.errors %}
+                        <div class="form-errors">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label
+                        for="{{ form.recent_questions_limit.id_for_label }}"
+                    >
+                        {{ form.recent_questions_limit.label }}
+                    </label>
+
+                    {{ form.recent_questions_limit }}
+
+                    {% if form.recent_questions_limit.help_text %}
+                        <small class="form-help">
+                            {{ form.recent_questions_limit.help_text }}
+                        </small>
+                    {% endif %}
+
+                    {% for error in form.recent_questions_limit.errors %}
+                        <div class="form-errors">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="settings-checkbox-card">
+                    <label>
+                        {{ form.auto_increase_difficulty }}
+
+                        <span>
+                            {{ form.auto_increase_difficulty.label }}
+                        </span>
+                    </label>
+
+                    {% for error in form.auto_increase_difficulty.errors %}
+                        <div class="form-errors">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label
+                        for="{{ form.correct_answers_per_level.id_for_label }}"
+                    >
+                        {{ form.correct_answers_per_level.label }}
+                    </label>
+
+                    {{ form.correct_answers_per_level }}
+
+                    {% for error in form.correct_answers_per_level.errors %}
+                        <div class="form-errors">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label
+                        for="{{ form.maximum_difficulty_level.id_for_label }}"
+                    >
+                        {{ form.maximum_difficulty_level.label }}
+                    </label>
+
+                    {{ form.maximum_difficulty_level }}
+
+                    {% for error in form.maximum_difficulty_level.errors %}
+                        <div class="form-errors">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="generation-settings-section">
+            <div class="generation-section-header">
+                <div>
+                    <h2>Математические действия</h2>
+
+                    <p>
+                        Вес определяет, насколько часто
+                        действие появляется в режиме
+                        «Все действия».
+                    </p>
+                </div>
+            </div>
+
+            {{ operation_formset.management_form }}
+
+            {% if operation_formset.non_form_errors %}
+                <div class="form-errors">
+                    {{ operation_formset.non_form_errors }}
+                </div>
+            {% endif %}
+
+            <div class="operation-settings-grid">
+                {% for operation_form in operation_formset %}
+                    <article
+                        class="
+                            operation-settings-card
+                            operation-settings-card--{{ operation_form.instance.operation }}
+                        "
+                    >
+                        {{ operation_form.id }}
+
+                        <div class="operation-settings-title">
+                            <h3>
+                                {{ operation_form.instance.get_operation_display }}
+                            </h3>
+
+                            <label class="operation-enabled-switch">
+                                {{ operation_form.is_enabled }}
+                                <span>Использовать</span>
+                            </label>
+                        </div>
+
+                        {% if operation_form.non_field_errors %}
+                            <div class="form-errors">
+                                {{ operation_form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="form-group">
+                            <label
+                                for="{{ operation_form.mixed_mode_weight.id_for_label }}"
+                            >
+                                {{ operation_form.mixed_mode_weight.label }}
+                            </label>
+
+                            {{ operation_form.mixed_mode_weight }}
+
+                            {% for error in operation_form.mixed_mode_weight.errors %}
+                                <div class="form-errors">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-group">
+                            <label
+                                for="{{ operation_form.operands_count.id_for_label }}"
+                            >
+                                {{ operation_form.operands_count.label }}
+                            </label>
+
+                            {{ operation_form.operands_count }}
+
+                            {% if operation_form.operands_count.help_text %}
+                                <small class="form-help">
+                                    {{ operation_form.operands_count.help_text }}
+                                </small>
+                            {% endif %}
+
+                            {% for error in operation_form.operands_count.errors %}
+                                <div class="form-errors">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if operation_form.instance.operation == "div" %}
+                            <div class="operation-help">
+                                <strong>
+                                    Правило деления
+                                </strong>
+
+                                <p>
+                                    Диапазон первого числа
+                                    задаёт правильный ответ.
+                                    Диапазон второго числа
+                                    задаёт делитель.
+                                    Делимое вычисляется
+                                    автоматически.
+                                </p>
+                            </div>
+                        {% endif %}
+
+                        <div class="operand-range">
+                            <h4>
+                                {% if operation_form.instance.operation == "div" %}
+                                    Диапазон ответа
+                                {% else %}
+                                    Первое число
+                                {% endif %}
+                            </h4>
+
+                            <div class="operand-range__fields">
+                                <div class="form-group">
+                                    <label
+                                        for="{{ operation_form.first_operand_min.id_for_label }}"
+                                    >
+                                        Минимум
+                                    </label>
+
+                                    {{ operation_form.first_operand_min }}
+
+                                    {% for error in operation_form.first_operand_min.errors %}
+                                        <div class="form-errors">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        for="{{ operation_form.first_operand_max.id_for_label }}"
+                                    >
+                                        Максимум
+                                    </label>
+
+                                    {{ operation_form.first_operand_max }}
+
+                                    {% for error in operation_form.first_operand_max.errors %}
+                                        <div class="form-errors">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="operand-range">
+                            <h4>
+                                {% if operation_form.instance.operation == "div" %}
+                                    Диапазон делителя
+                                {% else %}
+                                    Второе число
+                                {% endif %}
+                            </h4>
+
+                            <div class="operand-range__fields">
+                                <div class="form-group">
+                                    <label
+                                        for="{{ operation_form.second_operand_min.id_for_label }}"
+                                    >
+                                        Минимум
+                                    </label>
+
+                                    {{ operation_form.second_operand_min }}
+
+                                    {% for error in operation_form.second_operand_min.errors %}
+                                        <div class="form-errors">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        for="{{ operation_form.second_operand_max.id_for_label }}"
+                                    >
+                                        Максимум
+                                    </label>
+
+                                    {{ operation_form.second_operand_max }}
+
+                                    {% for error in operation_form.second_operand_max.errors %}
+                                        <div class="form-errors">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="operand-range">
+                            <h4>Ограничение результата</h4>
+
+                            <div class="operand-range__fields">
+                                <div class="form-group">
+                                    <label
+                                        for="{{ operation_form.minimum_answer.id_for_label }}"
+                                    >
+                                        Минимум
+                                    </label>
+
+                                    {{ operation_form.minimum_answer }}
+
+                                    {% for error in operation_form.minimum_answer.errors %}
+                                        <div class="form-errors">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        for="{{ operation_form.maximum_answer.id_for_label }}"
+                                    >
+                                        Максимум
+                                    </label>
+
+                                    {{ operation_form.maximum_answer }}
+
+                                    {% for error in operation_form.maximum_answer.errors %}
+                                        <div class="form-errors">
+                                            {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if operation_form.instance.operation == "sub" %}
+                            <label class="settings-checkbox-card">
+                                {{ operation_form.allow_negative_result }}
+
+                                <span>
+                                    Разрешать отрицательный результат
+                                </span>
+                            </label>
+
+                            {% for error in operation_form.allow_negative_result.errors %}
+                                <div class="form-errors">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <div class="generation-settings-actions">
+            <button
+                class="button"
+                type="submit"
+            >
+                Сохранить настройки
+            </button>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'game:mode_select' %}"
+            >
+                Отмена
+            </a>
+        </div>
+    </form>
+</section>
+{% endblock %}

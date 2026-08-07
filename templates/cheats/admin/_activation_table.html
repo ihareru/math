@@ -1,0 +1,101 @@
+{% if activations %}
+    <div class="history-table-wrapper">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>Код</th>
+                    <th>Активирован</th>
+                    <th>Окончание</th>
+                    <th>Статус</th>
+                    <th>IP</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for activation in activations %}
+                    <tr>
+                        <td>
+                            <strong>
+                                {{ activation.user.display_name }}
+                            </strong>
+
+                            <br>
+
+                            <small>
+                                {{ activation.user.email }}
+                            </small>
+                        </td>
+
+                        <td>
+                            {{ activation.cheat.code }}
+                        </td>
+
+                        <td>
+                            {{ activation.activated_at|date:"d.m.Y H:i" }}
+                        </td>
+
+                        <td>
+                            {% if activation.expires_at %}
+                                {{ activation.expires_at|date:"d.m.Y H:i" }}
+                            {% else %}
+                                Бессрочно
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if activation.currently_active %}
+                                <span class="cheat-status cheat-status--active">
+                                    Действует
+                                </span>
+                            {% elif not activation.is_active %}
+                                <span class="cheat-status cheat-status--disabled">
+                                    Отключён
+                                </span>
+                            {% else %}
+                                <span class="cheat-status cheat-status--expired">
+                                    Истёк
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ activation.activation_ip|default:"—" }}
+                        </td>
+
+                        <td>
+                            {% if activation.is_active %}
+                                <div class="table-actions">
+                                    <form
+                                        action="{% url 'cheats:admin_activation_disable' activation.pk %}"
+                                        method="post"
+                                    >
+                                        {% csrf_token %}
+
+                                        <input
+                                            type="hidden"
+                                            name="next"
+                                            value="{{ request.get_full_path }}"
+                                        >
+
+                                        <button
+                                            class="link-button link-button--danger"
+                                            type="submit"
+                                        >
+                                            Отключить
+                                        </button>
+                                    </form>
+                                </div>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>Активации отсутствуют.</p>
+{% endif %}

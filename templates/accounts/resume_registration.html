@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}
+Возобновление регистрации — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <h1>Возобновление регистрации</h1>
+
+    <p>
+        Укажите email, использованный при регистрации.
+        Если регистрация не завершена, мы отправим
+        новый код подтверждения.
+    </p>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">
+                {{ form.email.label }}
+            </label>
+
+            {{ form.email }}
+
+            {% for error in form.email.errors %}
+                <div class="form-errors">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">
+                Отправить код
+            </button>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'accounts:login' %}"
+            >
+                Вернуться ко входу
+            </a>
+        </div>
+    </form>
+</section>
+{% endblock %}

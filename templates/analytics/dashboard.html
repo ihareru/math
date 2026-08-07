@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}
+Аналитика
+{% endblock %}
+
+{% block content %}
+
+<h1>
+Аналитика
+</h1>
+
+<div class="dashboard-grid">
+
+    <div class="dashboard-card">
+
+        <h2>
+            Пользователей
+        </h2>
+
+        <p>
+            {{ registered_users }}
+        </p>
+
+    </div>
+
+    <div class="dashboard-card">
+
+        <h2>
+            Онлайн
+        </h2>
+
+        <p>
+            {{ online_users }}
+        </p>
+
+    </div>
+
+    <div class="dashboard-card">
+
+        <h2>
+            Входов сегодня
+        </h2>
+
+        <p>
+            {{ login_count_today }}
+        </p>
+
+    </div>
+
+    <div class="dashboard-card">
+
+        <h2>
+            Играли сегодня
+        </h2>
+
+        <p>
+            {{ active_users_today }}
+        </p>
+
+    </div>
+
+    <div class="dashboard-card">
+
+        <h2>
+            Новых сессий
+        </h2>
+
+        <p>
+            {{ sessions_today }}
+        </p>
+
+    </div>
+
+</div>
+
+<hr>
+
+<p>
+
+<a href="{% url 'analytics:online' %}">
+
+Онлайн пользователи
+
+</a>
+
+</p>
+
+<p>
+
+<a href="{% url 'analytics:users' %}">
+
+Пользователи
+
+</a>
+
+</p>
+
+<p>
+
+<a href="{% url 'analytics:logins' %}">
+
+История входов
+
+</a>
+
+</p>
+
+<p>
+
+<a href="{% url 'analytics:sessions' %}">
+
+Сессии
+
+</a>
+
+</p>
+
+{% endblock %}

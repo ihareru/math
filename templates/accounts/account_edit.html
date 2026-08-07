@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}
+Настройки профиля — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <h1>Настройки профиля</h1>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.display_name.id_for_label }}">
+                {{ form.display_name.label }}
+            </label>
+
+            {{ form.display_name }}
+
+            {% if form.display_name.help_text %}
+                <small class="form-help">
+                    {{ form.display_name.help_text }}
+                </small>
+            {% endif %}
+
+            {% for error in form.display_name.errors %}
+                <div class="form-errors">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            <label>
+                {{ form.show_in_rating }}
+                {{ form.show_in_rating.label }}
+            </label>
+
+            {% for error in form.show_in_rating.errors %}
+                <div class="form-errors">
+                    {{ error }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">
+                Сохранить
+            </button>
+
+            <a
+                class="button button--secondary"
+                href="{% url 'accounts:account_detail' %}"
+            >
+                Отмена
+            </a>
+        </div>
+    </form>
+</section>
+{% endblock %}

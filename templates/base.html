@@ -1,0 +1,259 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>
+        {% block title %}Math Game{% endblock %}
+    </title>
+
+    <link
+        rel="icon"
+        type="image/x-icon"
+        href="{% static 'favicon.ico' %}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/main.css' %}"
+    >
+
+    {% block extra_css %}
+    {% endblock %}
+</head>
+
+<body
+
+    class="
+        site-body
+        {% if game_settings.background_image_url %}
+            site-body--has-background
+        {% endif %}
+    "
+
+    style="
+        --user-background-color:
+            {{ game_settings.background_color|default:'#87CEEB' }};
+
+        {% if game_settings.background_image_url %}
+            --user-background-image:
+                url('{{ game_settings.background_image_url }}');
+        {% else %}
+            --user-background-image: none;
+        {% endif %}
+    "
+    data-authenticated-user="{% if user.is_authenticated %}1{% else %}0{% endif %}"
+    data-analytics-url="{% url 'analytics:client_context' %}"
+    data-background-music-enabled="{% if game_settings.background_music %}1{% else %}0{% endif %}"
+    data-success-sound-enabled="{% if game_settings.success_sound %}1{% else %}0{% endif %}"
+    data-fail-sound-enabled="{% if game_settings.fail_sound %}1{% else %}0{% endif %}"
+    data-background-volume="{{ game_settings.background_volume|default:50 }}"
+    data-success-volume="{{ game_settings.success_volume|default:50 }}"
+    data-fail-volume="{{ game_settings.fail_volume|default:50 }}"
+>
+    <form hidden>
+        {% csrf_token %}
+    </form>
+    <header class="site-header">
+        <div class="site-container site-header__content">
+            <a
+                class="site-logo"
+                href="{% url 'dashboard:home' %}"
+            >
+                Math Game
+            </a>
+
+            <nav class="site-nav">
+                {% if user.is_authenticated %}
+                    <span>
+                        {{ user.display_name }}
+                    </span>
+
+                    <a href="{% url 'accounts:account_detail' %}">
+                        Личный кабинет
+                    </a>
+
+                    {% if user.is_staff %}
+                        <a href="{% url 'cheats:admin_dashboard' %}">
+                            Управление кодами
+                        </a>
+                    {% endif %}
+
+                    <a href="{% url 'user_settings:detail' %}">
+                        Настройки
+                    </a>
+
+                    <form
+                        action="{% url 'accounts:logout' %}"
+                        method="post"
+                    >
+                        {% csrf_token %}
+
+                        <button
+                            class="link-button"
+                            type="submit"
+                        >
+                            Выйти
+                        </button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}">
+                        Войти
+                    </a>
+
+                    <a href="{% url 'accounts:register' %}">
+                        Регистрация
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="site-container main-content">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div
+                        class="
+                            message
+                            message--{{ message.tags|default:'info' }}
+                        "
+                    >
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    {% if user.is_authenticated %}
+        <div
+            id="secret-code-dialog"
+            class="secret-code-dialog"
+            hidden
+        >
+            <div
+                class="secret-code-dialog__backdrop"
+                data-secret-code-close
+            ></div>
+
+            <section
+                class="secret-code-dialog__content"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="secret-code-title"
+            >
+                <button
+                    class="secret-code-dialog__close"
+                    type="button"
+                    aria-label="Закрыть"
+                    data-secret-code-close
+                >
+                    ×
+                </button>
+
+                <h2 id="secret-code-title">
+                    Секретный код
+                </h2>
+
+                <p>
+                    Введите код активации бонуса.
+                </p>
+
+                <form
+                    action="{% url 'cheats:activate' %}"
+                    method="post"
+                >
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="secret-code-input">
+                            Код
+                        </label>
+
+                        <input
+                            id="secret-code-input"
+                            class="form-control cheat-code-input"
+                            type="text"
+                            name="code"
+                            maxlength="50"
+                            autocomplete="off"
+                            autocapitalize="characters"
+                            spellcheck="false"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-actions">
+                        <button
+                            class="button"
+                            type="submit"
+                        >
+                            Активировать
+                        </button>
+
+                        <button
+                            class="button button--secondary"
+                            type="button"
+                            data-secret-code-close
+                        >
+                            Отмена
+                        </button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    {% endif %}
+
+    <audio
+        id="background-music"
+        preload="auto"
+        loop
+    >
+        <source
+            src="{% static 'music/background.mp3' %}"
+            type="audio/mpeg"
+        >
+    </audio>
+
+    <audio
+        id="success-sound"
+        preload="auto"
+    >
+        <source
+            src="{% static 'music/success.mp3' %}"
+            type="audio/mpeg"
+        >
+    </audio>
+
+    <audio
+        id="fail-sound"
+        preload="auto"
+    >
+        <source
+            src="{% static 'music/fail.mp3' %}"
+            type="audio/mpeg"
+        >
+    </audio>
+
+    <script src="{% static 'js/audio.js' %}"></script>
+    <script src="{% static 'js/analytics.js' %}"></script>
+
+    {% if user.is_authenticated %}
+        <script src="{% static 'js/secret-code.js' %}"></script>
+    {% endif %}
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

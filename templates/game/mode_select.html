@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}
+Выбор режима — Math Game
+{% endblock %}
+
+{% block content %}
+<section class="page-card game-mode-page">
+    <h1>Выберите режим</h1>
+
+    <div class="game-summary">
+        <div>
+            <strong>{{ statistics.stars }}</strong>
+            <span>звёзд</span>
+        </div>
+
+        <div>
+            <strong>{{ statistics.total_correct }}</strong>
+            <span>правильных</span>
+        </div>
+
+        <div>
+            <strong>{{ statistics.total_wrong }}</strong>
+            <span>ошибок</span>
+        </div>
+
+        <div>
+            <strong>{{ statistics.best_streak }}</strong>
+            <span>лучшая серия</span>
+        </div>
+    </div>
+
+    {% if active_session %}
+        <div class="active-session-notice">
+            <p>
+                Есть активная сессия:
+                <strong>
+                    {{ active_session.get_mode_display }}
+                </strong>.
+            </p>
+
+            <a
+                class="button"
+                href="{% url 'game:play' %}"
+            >
+                Продолжить
+            </a>
+        </div>
+    {% endif %}
+
+    <div class="game-mode-grid">
+        {% for mode in modes %}
+            <form
+                action="{% url 'game:start' mode.value %}"
+                method="post"
+            >
+                {% csrf_token %}
+
+                <button
+                    class="
+                    game-mode-card
+                    {% if not mode.enabled %}
+                        game-mode-card--disabled
+                    {% endif %}
+                    "
+                    type="submit"
+                    {% if not mode.enabled %}
+                        disabled
+                    {% endif %}
+                >
+                    <span class="game-mode-card__symbol">
+                        {{ mode.symbol }}
+                    </span>
+
+                    <span class="game-mode-card__title">
+                        {{ mode.title }}
+                    </span>
+                </button>
+            </form>
+        {% endfor %}
+    </div>
+    <section class="review-mode-card">
+        <div>
+            <h2>Повторить ошибки</h2>
+
+            {% if unresolved_errors_count > 0 %}
+                <p>
+                    Не разобрано ошибок:
+                    <strong>
+                        {{ unresolved_errors_count }}
+                    </strong>
+                </p>
+
+                <p>
+                    Игра предложит примеры, в которых
+                    вы ранее допустили ошибку.
+                </p>
+            {% else %}
+                <p>
+                    Неразобранных ошибок пока нет.
+                </p>
+            {% endif %}
+        </div>
+
+        <form
+            action="{% url 'game:start_review' %}"
+            method="post"
+        >
+            {% csrf_token %}
+
+            <button
+                class="button"
+                type="submit"
+                {% if unresolved_errors_count == 0 %}
+                    disabled
+                {% endif %}
+            >
+                Начать повторение
+            </button>
+        </form>
+    </section>
+
+    <div class="form-actions">
+        <a
+            class="button button--secondary"
+            href="{% url 'game:generation_settings' %}"
+        >
+            Настройки примеров
+        </a>
+        <a
+            class="button button--secondary"
+            href="{% url 'game:statistics' %}"
+        >
+            Моя статистика
+        </a>
+        <a
+            class="button button--secondary"
+            href="{% url 'game:history' %}"
+        >
+            История примеров
+        </a>
+
+        <a
+            class="button button--secondary"
+            href="{% url 'dashboard:home' %}"
+        >
+            На главную
+        </a>
+    </div>
+</section>
+{% endblock %}

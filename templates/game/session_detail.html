@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}
+Сессия {{ game_session.started_at|date:"d.m.Y H:i" }}
+{% endblock %}
+
+{% block content %}
+<section class="page-card history-page">
+    <div class="statistics-section__header">
+        <div>
+            <h1>
+                {{ game_session.get_mode_display }}
+            </h1>
+
+            <p>
+                {{ game_session.started_at|date:"d.m.Y H:i" }}
+            </p>
+        </div>
+
+        <a
+            class="button button--secondary"
+            href="{% url 'game:session_list' %}"
+        >
+            Все сессии
+        </a>
+    </div>
+
+    <section class="game-summary">
+        <div>
+            <strong>
+                {{ game_session.correct_count }}
+            </strong>
+            <span>правильных</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ game_session.wrong_count }}
+            </strong>
+            <span>ошибок</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ game_session.accuracy_percent }}%
+            </strong>
+            <span>точность</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ game_session.best_streak }}
+            </strong>
+            <span>лучшая серия</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ game_session.stars_earned }}
+            </strong>
+            <span>звёзд</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ game_session.average_response_time_seconds }}
+            </strong>
+            <span>среднее время, сек.</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ game_session.duration_minutes }}
+            </strong>
+            <span>длительность, мин.</span>
+        </div>
+
+        <div>
+            <strong>
+                {{ game_session.get_status_display }}
+            </strong>
+            <span>статус</span>
+        </div>
+    </section>
+
+    {% if page_obj %}
+        <div class="history-table-wrapper">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Пример</th>
+                        <th>Ответ</th>
+                        <th>Правильный</th>
+                        <th>Результат</th>
+                        <th>Тип</th>
+                        <th>Время</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for question in page_obj %}
+                        <tr>
+                            <td>
+                                {{ question.sequence_number }}
+                            </td>
+
+                            <td>
+                                <a
+                                    href="{% url 'game:question_result' question.pk %}"
+                                >
+                                    {{ question.expression }}
+                                </a>
+                            </td>
+
+                            <td>
+                                {{ question.user_answer }}
+                            </td>
+
+                            <td>
+                                {{ question.correct_answer }}
+                            </td>
+
+                            <td>
+                                {% if question.is_correct %}
+                                    <span class="history-correct">
+                                        Правильно
+                                    </span>
+                                {% else %}
+                                    <span class="history-wrong">
+                                        Ошибка
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if question.is_review %}
+                                    Повтор ошибки
+                                {% else %}
+                                    Обычный
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ question.response_time_seconds }}
+                                сек.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include "game/_pagination.html" %}
+    {% else %}
+        <p>
+            В этой сессии пока нет отвеченных примеров.
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

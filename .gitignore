@@ -4,44 +4,39 @@ __pycache__/
 *$py.class
 *.so
 
-# Distribution / packaging
-build/
-dist/
-*.egg-info/
-*.egg
-pip-log.txt
-pip-delete-this-directory.txt
-
 # Virtual environments
-.env
-.venv
+.venv/
 venv/
-ENV/
 env/
 
-# Testing
-.tox/
-.coverage
-.coverage.*
-.pytest_cache/
-htmlcov/
-.cache
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
 
-# Type checkers
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# Test and coverage
+.coverage
+htmlcov/
+.pytest_cache/
 .mypy_cache/
-.pyre/
-.pytype/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
 
 # macOS
 .DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp

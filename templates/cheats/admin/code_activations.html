@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}
+Активации {{ cheat.code }}
+{% endblock %}
+
+{% block content %}
+<section class="cheat-admin-page">
+    {% include "cheats/admin/_navigation.html" %}
+
+    <div class="cheat-admin-header">
+        <div>
+            <h1>Активации {{ cheat.code }}</h1>
+
+            <p>{{ cheat.name }}</p>
+        </div>
+
+        <a
+            class="button button--secondary"
+            href="{% url 'cheats:admin_code_edit' cheat.pk %}"
+        >
+            Изменить код
+        </a>
+    </div>
+
+    {% include "cheats/admin/_activation_table.html" with activations=page_obj.object_list %}
+
+    {% include "game/_pagination.html" %}
+</section>
+{% endblock %}

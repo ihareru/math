@@ -1,0 +1,32 @@
+<nav class="cheat-admin-navigation">
+    <a
+        href="{% url 'cheats:admin_dashboard' %}"
+        {% if request.resolver_match.url_name == "admin_dashboard" %}
+            class="is-active"
+        {% endif %}
+    >
+        Сводка
+    </a>
+
+    <a
+        href="{% url 'cheats:admin_code_list' %}"
+        {% if request.resolver_match.url_name == "admin_code_list" %}
+            class="is-active"
+        {% endif %}
+    >
+        Чит-коды
+    </a>
+
+    <a
+        href="{% url 'cheats:admin_activation_list' %}"
+        {% if request.resolver_match.url_name == "admin_activation_list" %}
+            class="is-active"
+        {% endif %}
+    >
+        Активации
+    </a>
+
+    <a href="{% url 'admin:index' %}">
+        Django Admin
+    </a>
+</nav>
