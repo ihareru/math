@@ -267,31 +267,6 @@ def play(request):
 
     game_session = question.session
 
-    operation_settings = (
-        request.user
-        .generation_settings
-        .operations
-        .filter(
-            operation=question.operation,
-        )
-        .first()
-    )
-
-    if operation_settings is not None:
-        difficulty_level = (
-            calculate_operation_difficulty_level(
-                generation_settings=(
-                    request.user
-                    .generation_settings
-                ),
-                operation=(
-                    operation_settings.operation
-                ),
-            )
-        )
-    else:
-        difficulty_level = 1
-
     question_to_settings_operation = {
         GameQuestion.Operation.ADD: (
             OperationGenerationSettings
