@@ -18,6 +18,11 @@ urlpatterns = [
         name="generation_settings",
     ),
     path(
+        "settings/profile/",
+        views.apply_generation_profile,
+        name="apply_generation_profile",
+    ),
+    path(
         "statistics/",
         views.statistics_dashboard,
         name="statistics",

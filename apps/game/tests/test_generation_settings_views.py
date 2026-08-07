@@ -4,6 +4,7 @@ from django.urls import reverse
 from apps.accounts.models import User
 from apps.game.models import (
     OperationGenerationSettings,
+    UserGenerationSettings,
 )
 
 
@@ -313,3 +314,91 @@ class GenerationSettingsViewTests(TestCase):
             division_form.errors,
         )
 
+    def test_user_can_apply_easy_profile(self):
+        response = self.client.post(
+            reverse(
+                "game:apply_generation_profile"
+            ),
+            {
+                "profile": "easy",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "game:generation_settings"
+            ),
+        )
+
+        settings_object = (
+            self.user.generation_settings
+        )
+
+        settings_object.refresh_from_db()
+
+        self.assertEqual(
+            settings_object.difficulty_profile,
+            (
+                UserGenerationSettings
+                .DifficultyProfile.EASY
+            ),
+        )
+
+        addition = (
+            settings_object.operations.get(
+                operation=(
+                    OperationGenerationSettings
+                    .Operation.ADD
+                )
+            )
+        )
+
+        self.assertEqual(
+            addition.first_operand_max,
+            20,
+        )
+
+    def test_manual_save_switches_profile_to_custom(
+            self,
+    ):
+        settings_object = (
+            self.user.generation_settings
+        )
+
+        settings_object.difficulty_profile = (
+            UserGenerationSettings
+            .DifficultyProfile.EASY
+        )
+
+        settings_object.save(
+            update_fields=[
+                "difficulty_profile",
+            ]
+        )
+
+        data = self.build_post_data()
+
+        response = self.client.post(
+            reverse(
+                "game:generation_settings"
+            ),
+            data,
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "game:generation_settings"
+            ),
+        )
+
+        settings_object.refresh_from_db()
+
+        self.assertEqual(
+            settings_object.difficulty_profile,
+            (
+                UserGenerationSettings
+                .DifficultyProfile.CUSTOM
+            ),
+        )

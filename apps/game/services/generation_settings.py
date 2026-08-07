@@ -65,6 +65,200 @@ DEFAULT_OPERATION_SETTINGS = {
     },
 }
 
+DIFFICULTY_PROFILES = {
+    UserGenerationSettings.DifficultyProfile.EASY: {
+        "general": {
+            "avoid_recent_duplicates": True,
+            "recent_questions_limit": 50,
+            "auto_increase_difficulty": False,
+            "correct_answers_per_level": 50,
+            "maximum_difficulty_level": 5,
+        },
+        "operations": {
+            OperationGenerationSettings.Operation.ADD: {
+                "is_enabled": True,
+                "mixed_mode_weight": 35,
+                "first_operand_min": 1,
+                "first_operand_max": 20,
+                "second_operand_min": 1,
+                "second_operand_max": 20,
+                "operands_count": 2,
+                "minimum_answer": 0,
+                "maximum_answer": 40,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.SUB: {
+                "is_enabled": True,
+                "mixed_mode_weight": 35,
+                "first_operand_min": 1,
+                "first_operand_max": 20,
+                "second_operand_min": 1,
+                "second_operand_max": 20,
+                "operands_count": 2,
+                "minimum_answer": 0,
+                "maximum_answer": 20,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.MUL: {
+                "is_enabled": True,
+                "mixed_mode_weight": 20,
+                "first_operand_min": 1,
+                "first_operand_max": 5,
+                "second_operand_min": 1,
+                "second_operand_max": 5,
+                "operands_count": 2,
+                "minimum_answer": 1,
+                "maximum_answer": 25,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.DIV: {
+                "is_enabled": True,
+                "mixed_mode_weight": 10,
+                "first_operand_min": 1,
+                "first_operand_max": 5,
+                "second_operand_min": 1,
+                "second_operand_max": 5,
+                "operands_count": 2,
+                "minimum_answer": 1,
+                "maximum_answer": 5,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+        },
+    },
+
+    UserGenerationSettings.DifficultyProfile.MEDIUM: {
+        "general": {
+            "avoid_recent_duplicates": True,
+            "recent_questions_limit": 100,
+            "auto_increase_difficulty": True,
+            "correct_answers_per_level": 50,
+            "maximum_difficulty_level": 10,
+        },
+        "operations": {
+            OperationGenerationSettings.Operation.ADD: {
+                "is_enabled": True,
+                "mixed_mode_weight": 25,
+                "first_operand_min": 1,
+                "first_operand_max": 100,
+                "second_operand_min": 1,
+                "second_operand_max": 100,
+                "operands_count": 2,
+                "minimum_answer": None,
+                "maximum_answer": 200,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.SUB: {
+                "is_enabled": True,
+                "mixed_mode_weight": 25,
+                "first_operand_min": 1,
+                "first_operand_max": 100,
+                "second_operand_min": 1,
+                "second_operand_max": 100,
+                "operands_count": 2,
+                "minimum_answer": 0,
+                "maximum_answer": 100,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.MUL: {
+                "is_enabled": True,
+                "mixed_mode_weight": 25,
+                "first_operand_min": 1,
+                "first_operand_max": 10,
+                "second_operand_min": 1,
+                "second_operand_max": 10,
+                "operands_count": 2,
+                "minimum_answer": 1,
+                "maximum_answer": 100,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.DIV: {
+                "is_enabled": True,
+                "mixed_mode_weight": 25,
+                "first_operand_min": 1,
+                "first_operand_max": 10,
+                "second_operand_min": 1,
+                "second_operand_max": 10,
+                "operands_count": 2,
+                "minimum_answer": 1,
+                "maximum_answer": 10,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+        },
+    },
+
+    UserGenerationSettings.DifficultyProfile.HARD: {
+        "general": {
+            "avoid_recent_duplicates": True,
+            "recent_questions_limit": 150,
+            "auto_increase_difficulty": True,
+            "correct_answers_per_level": 30,
+            "maximum_difficulty_level": 15,
+        },
+        "operations": {
+            OperationGenerationSettings.Operation.ADD: {
+                "is_enabled": True,
+                "mixed_mode_weight": 25,
+                "first_operand_min": 10,
+                "first_operand_max": 500,
+                "second_operand_min": 10,
+                "second_operand_max": 500,
+                "operands_count": 3,
+                "minimum_answer": None,
+                "maximum_answer": None,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.SUB: {
+                "is_enabled": True,
+                "mixed_mode_weight": 25,
+                "first_operand_min": 100,
+                "first_operand_max": 1000,
+                "second_operand_min": 10,
+                "second_operand_max": 300,
+                "operands_count": 3,
+                "minimum_answer": None,
+                "maximum_answer": None,
+                "allow_negative_result": True,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.MUL: {
+                "is_enabled": True,
+                "mixed_mode_weight": 25,
+                "first_operand_min": 2,
+                "first_operand_max": 20,
+                "second_operand_min": 2,
+                "second_operand_max": 20,
+                "operands_count": 3,
+                "minimum_answer": None,
+                "maximum_answer": None,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+            OperationGenerationSettings.Operation.DIV: {
+                "is_enabled": True,
+                "mixed_mode_weight": 25,
+                "first_operand_min": 2,
+                "first_operand_max": 50,
+                "second_operand_min": 2,
+                "second_operand_max": 20,
+                "operands_count": 2,
+                "minimum_answer": 2,
+                "maximum_answer": 50,
+                "allow_negative_result": False,
+                "allow_remainder": False,
+            },
+        },
+    },
+}
+
 QUESTION_OPERATION_MAP = {
     OperationGenerationSettings.Operation.ADD: (
         GameQuestion.Operation.ADD
@@ -83,11 +277,7 @@ QUESTION_OPERATION_MAP = {
 
 @transaction.atomic
 def create_default_generation_settings(*, user):
-    """
-    Создаёт общие настройки генератора и недостающие
-    настройки четырёх математических действий.
-    """
-    generation_settings, _ = (
+    generation_settings, created = (
         UserGenerationSettings.objects.get_or_create(
             user=user,
         )
@@ -105,6 +295,17 @@ def create_default_generation_settings(*, user):
                 operation=operation,
                 defaults=defaults,
             )
+        )
+
+    if created:
+        apply_difficulty_profile(
+            generation_settings=(
+                generation_settings
+            ),
+            profile=(
+                UserGenerationSettings
+                .DifficultyProfile.MEDIUM
+            ),
         )
 
     return generation_settings
@@ -434,3 +635,86 @@ def build_operation_difficulty_progress(
             maximum_level_reached
         ),
     )
+
+@transaction.atomic
+def apply_difficulty_profile(
+    *,
+    generation_settings,
+    profile,
+):
+    """
+    Применяет готовый профиль к настройкам пользователя.
+
+    CUSTOM не изменяет существующие параметры.
+    """
+    if (
+        profile
+        == UserGenerationSettings
+        .DifficultyProfile.CUSTOM
+    ):
+        generation_settings.difficulty_profile = (
+            UserGenerationSettings
+            .DifficultyProfile.CUSTOM
+        )
+
+        generation_settings.save(
+            update_fields=[
+                "difficulty_profile",
+                "updated_at",
+            ]
+        )
+
+        return generation_settings
+
+    profile_data = DIFFICULTY_PROFILES.get(
+        profile
+    )
+
+    if profile_data is None:
+        raise ValueError(
+            "Неизвестный профиль сложности."
+        )
+
+    general = profile_data["general"]
+
+    generation_settings.difficulty_profile = profile
+
+    for field_name, value in general.items():
+        setattr(
+            generation_settings,
+            field_name,
+            value,
+        )
+
+    generation_settings.save(
+        update_fields=[
+            "difficulty_profile",
+            *general.keys(),
+            "updated_at",
+        ]
+    )
+
+    operations = profile_data["operations"]
+
+    for operation, values in operations.items():
+        operation_settings, _ = (
+            OperationGenerationSettings.objects
+            .get_or_create(
+                generation_settings=(
+                    generation_settings
+                ),
+                operation=operation,
+            )
+        )
+
+        for field_name, value in values.items():
+            setattr(
+                operation_settings,
+                field_name,
+                value,
+            )
+
+        operation_settings.full_clean()
+        operation_settings.save()
+
+    return generation_settings

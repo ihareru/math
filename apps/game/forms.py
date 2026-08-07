@@ -469,3 +469,21 @@ OperationGenerationSettingsFormSet = (
         validate_max=True,
     )
 )
+
+
+class DifficultyProfileForm(forms.Form):
+    profile = forms.ChoiceField(
+        label="Профиль сложности",
+        choices=(
+            UserGenerationSettings
+            .DifficultyProfile
+            .choices
+        ),
+        widget=forms.RadioSelect(
+            attrs={
+                "class": (
+                    "difficulty-profile-radio"
+                ),
+            }
+        ),
+    )

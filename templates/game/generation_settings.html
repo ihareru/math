@@ -36,6 +36,13 @@
 
     <section class="difficulty-summary">
         <div>
+            <span>Профиль</span>
+
+            <strong>
+                {{ settings_object.get_difficulty_profile_display }}
+            </strong>
+        </div>
+        <div>
             <span>
                 Автоматическое повышение
             </span>
@@ -53,7 +60,7 @@
                 <strong>
                     Обратите внимание
                 </strong>
-        
+
                 <p>
                     Автоматическое повышение расширяет
                     верхние границы чисел. Ограничения
@@ -82,6 +89,83 @@
                 {{ settings_object.maximum_difficulty_level }}
             </strong>
         </div>
+    </section>
+
+    <section class="generation-settings-section">
+        <div class="generation-section-header">
+            <div>
+                <h2>Профиль сложности</h2>
+
+                <p>
+                    Выберите готовый набор параметров
+                    или настройте генератор самостоятельно.
+                </p>
+            </div>
+        </div>
+
+        <form
+            action="{% url 'game:apply_generation_profile' %}"
+            method="post"
+        >
+            {% csrf_token %}
+
+            <div class="difficulty-profile-grid">
+                {% for radio in profile_form.profile %}
+                    <label
+                        class="
+                            difficulty-profile-card
+                            {% if radio.data.selected %}
+                                difficulty-profile-card--selected
+                            {% endif %}
+                        "
+                    >
+                        {{ radio.tag }}
+
+                        <span class="difficulty-profile-card__content">
+                            <strong>
+                                {{ radio.choice_label }}
+                            </strong>
+
+                            {% if radio.data.value == "easy" %}
+                                <small>
+                                    Небольшие числа,
+                                    простые вычисления,
+                                    два операнда.
+                                </small>
+
+                            {% elif radio.data.value == "medium" %}
+                                <small>
+                                    Сбалансированный режим
+                                    для регулярных занятий.
+                                </small>
+
+                            {% elif radio.data.value == "hard" %}
+                                <small>
+                                    Большие числа,
+                                    несколько операндов,
+                                    быстрый рост сложности.
+                                </small>
+
+                            {% elif radio.data.value == "custom" %}
+                                <small>
+                                    Использовать собственные
+                                    диапазоны и правила.
+                                </small>
+                            {% endif %}
+                        </span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Применить профиль
+                </button>
+            </div>
+        </form>
     </section>
 
     <section class="generation-settings-section">

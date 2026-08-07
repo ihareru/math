@@ -20,6 +20,7 @@ from .models import (
     GameSession,
     OperationGenerationSettings,
     UserGameStatistics,
+    UserGenerationSettings,
 )
 from .services.exceptions import GameServiceError
 from .services.gameplay import (
@@ -49,9 +50,12 @@ from .services.generation_settings import (
     calculate_operation_difficulty_level,
     create_default_generation_settings,
     get_all_operation_difficulty_progress,
+    apply_difficulty_profile,
+
 )
 from .forms import (
     AnswerForm,
+    DifficultyProfileForm,
     OperationGenerationSettingsFormSet,
     UserGenerationSettingsForm,
 )
@@ -686,10 +690,19 @@ def generation_settings(request):
         )
 
         if (
-            form.is_valid()
-            and operation_formset.is_valid()
+                form.is_valid()
+                and operation_formset.is_valid()
         ):
-            settings_object = form.save()
+            settings_object = form.save(
+                commit=False
+            )
+
+            settings_object.difficulty_profile = (
+                UserGenerationSettings
+                .DifficultyProfile.CUSTOM
+            )
+
+            settings_object.save()
 
             operation_formset.instance = (
                 settings_object
@@ -700,8 +713,9 @@ def generation_settings(request):
             messages.success(
                 request,
                 (
-                    "Настройки генерации примеров "
-                    "сохранены."
+                    "Индивидуальные настройки "
+                    "генерации сохранены. "
+                    "Выбран профиль «Свой»."
                 ),
             )
 
@@ -729,6 +743,15 @@ def generation_settings(request):
         )
     )
 
+    profile_form = DifficultyProfileForm(
+        initial={
+            "profile": (
+                settings_object
+                .difficulty_profile
+            )
+        }
+    )
+
     return render(
         request,
         "game/generation_settings.html",
@@ -743,5 +766,70 @@ def generation_settings(request):
             "difficulty_progress": (
                 difficulty_progress
             ),
+            "profile_form": profile_form,
         },
+    )
+
+@login_required
+@require_POST
+@transaction.atomic
+def apply_generation_profile(request):
+    settings_object = (
+        create_default_generation_settings(
+            user=request.user,
+        )
+    )
+
+    form = DifficultyProfileForm(
+        request.POST,
+    )
+
+    if not form.is_valid():
+        messages.error(
+            request,
+            "Не удалось выбрать профиль сложности.",
+        )
+
+        return redirect(
+            "game:generation_settings"
+        )
+
+    profile = form.cleaned_data[
+        "profile"
+    ]
+
+    apply_difficulty_profile(
+        generation_settings=settings_object,
+        profile=profile,
+    )
+
+    profile_label = dict(
+        UserGenerationSettings
+        .DifficultyProfile
+        .choices
+    )[profile]
+
+    if (
+        profile
+        == UserGenerationSettings
+        .DifficultyProfile.CUSTOM
+    ):
+        messages.success(
+            request,
+            (
+                "Выбран профиль «Свой». "
+                "Текущие параметры сохранены."
+            ),
+        )
+    else:
+        messages.success(
+            request,
+            (
+                f"Профиль «{profile_label}» "
+                "успешно применён."
+            ),
+        )
+
+    return redirect(
+        "game:generation_settings"
     )

@@ -2043,3 +2043,75 @@ label.settings-checkbox-card {
     color: var(--muted-color);
     text-align: right;
 }
+
+.difficulty-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        4,
+        minmax(0, 1fr)
+    );
+    gap: 1rem;
+}
+
+.difficulty-profile-card {
+    position: relative;
+    display: block;
+    min-height: 145px;
+    padding: 1rem;
+    cursor: pointer;
+    background: #f7f9fd;
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    transition:
+        border-color 0.15s ease,
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.difficulty-profile-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.difficulty-profile-card--selected {
+    background: #edf4ff;
+    border-color: var(--primary-color);
+}
+
+.difficulty-profile-card input {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 20px;
+    height: 20px;
+}
+
+.difficulty-profile-card__content {
+    display: flex;
+    height: 100%;
+    padding-right: 1.75rem;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.difficulty-profile-card__content strong {
+    font-size: 1.15rem;
+}
+
+.difficulty-profile-card__content small {
+    color: var(--muted-color);
+    line-height: 1.5;
+}
+
+@media (max-width: 850px) {
+    .difficulty-profile-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .difficulty-profile-grid {
+        grid-template-columns: 1fr;
+    }
+}

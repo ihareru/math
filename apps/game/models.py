@@ -673,11 +673,24 @@ class UserGenerationSettings(models.Model):
     Общие настройки генерации примеров пользователя.
     """
 
+    class DifficultyProfile(models.TextChoices):
+        EASY = "easy", "Лёгкий"
+        MEDIUM = "medium", "Средний"
+        HARD = "hard", "Сложный"
+        CUSTOM = "custom", "Свой"
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="generation_settings",
         verbose_name="Пользователь",
+    )
+
+    difficulty_profile = models.CharField(
+        "Профиль сложности",
+        max_length=20,
+        choices=DifficultyProfile.choices,
+        default=DifficultyProfile.MEDIUM,
     )
 
     avoid_recent_duplicates = models.BooleanField(
