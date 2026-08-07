@@ -46,7 +46,9 @@ from .services.generator_exceptions import (
     QuestionGenerationError,
 )
 from .services.generation_settings import (
+    calculate_operation_difficulty_level,
     create_default_generation_settings,
+    get_all_operation_difficulty_progress,
 )
 from .forms import (
     AnswerForm,
@@ -261,6 +263,69 @@ def play(request):
 
     game_session = question.session
 
+    operation_settings = (
+        request.user
+        .generation_settings
+        .operations
+        .filter(
+            operation=question.operation,
+        )
+        .first()
+    )
+
+    if operation_settings is not None:
+        difficulty_level = (
+            calculate_operation_difficulty_level(
+                generation_settings=(
+                    request.user
+                    .generation_settings
+                ),
+                operation=(
+                    operation_settings.operation
+                ),
+            )
+        )
+    else:
+        difficulty_level = 1
+
+    question_to_settings_operation = {
+        GameQuestion.Operation.ADD: (
+            OperationGenerationSettings
+            .Operation.ADD
+        ),
+        GameQuestion.Operation.SUB: (
+            OperationGenerationSettings
+            .Operation.SUB
+        ),
+        GameQuestion.Operation.MUL: (
+            OperationGenerationSettings
+            .Operation.MUL
+        ),
+        GameQuestion.Operation.DIV: (
+            OperationGenerationSettings
+            .Operation.DIV
+        ),
+    }
+
+    settings_operation = (
+        question_to_settings_operation.get(
+            question.operation
+        )
+    )
+
+    if settings_operation is not None:
+        difficulty_level = (
+            calculate_operation_difficulty_level(
+                generation_settings=(
+                    request.user
+                    .generation_settings
+                ),
+                operation=settings_operation,
+            )
+        )
+    else:
+        difficulty_level = 1
+
     recent_questions = (
         get_recent_answered_questions(
             user=request.user,
@@ -276,6 +341,8 @@ def play(request):
             "game_session": game_session,
             "form": AnswerForm(),
             "recent_questions": recent_questions,
+            "difficulty_level": difficulty_level,
+
         },
     )
 
@@ -654,6 +721,14 @@ def generation_settings(request):
             )
         )
 
+    difficulty_progress = (
+        get_all_operation_difficulty_progress(
+            generation_settings=(
+                settings_object
+            ),
+        )
+    )
+
     return render(
         request,
         "game/generation_settings.html",
@@ -664,6 +739,9 @@ def generation_settings(request):
             ),
             "settings_object": (
                 settings_object
+            ),
+            "difficulty_progress": (
+                difficulty_progress
             ),
         },
     )

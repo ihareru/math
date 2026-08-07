@@ -36,27 +36,127 @@
 
     <section class="difficulty-summary">
         <div>
-            <span>Текущий уровень</span>
+            <span>
+                Автоматическое повышение
+            </span>
 
             <strong>
-                {{ settings_object.current_difficulty_level }}
+                {% if settings_object.auto_increase_difficulty %}
+                    Включено
+                {% else %}
+                    Выключено
+                {% endif %}
+            </strong>
+        </div>
+        {% if form.auto_increase_difficulty.value %}
+            <div class="operation-help">
+                <strong>
+                    Обратите внимание
+                </strong>
+        
+                <p>
+                    Автоматическое повышение расширяет
+                    верхние границы чисел. Ограничения
+                    минимального и максимального результата
+                    продолжают действовать.
+                </p>
+            </div>
+        {% endif %}
+
+        <div>
+            <span>
+                Ответов на уровень
+            </span>
+
+            <strong>
+                {{ settings_object.correct_answers_per_level }}
             </strong>
         </div>
 
         <div>
-            <span>Правильных ответов</span>
-
-            <strong>
-                {{ request.user.game_statistics.total_correct }}
-            </strong>
-        </div>
-
-        <div>
-            <span>Максимальный уровень</span>
+            <span>
+                Максимальный уровень
+            </span>
 
             <strong>
                 {{ settings_object.maximum_difficulty_level }}
             </strong>
+        </div>
+    </section>
+
+    <section class="generation-settings-section">
+        <div class="generation-section-header">
+            <div>
+                <h2>Уровни сложности</h2>
+
+                <p>
+                    Уровень рассчитывается отдельно
+                    для каждого математического действия.
+                </p>
+            </div>
+        </div>
+
+        <div class="difficulty-operation-grid">
+            {% for item in difficulty_progress %}
+                <article
+                    class="
+                        difficulty-operation-card
+                        difficulty-operation-card--{{ item.operation }}
+                    "
+                >
+                    <div class="difficulty-operation-card__header">
+                        <h3>{{ item.title }}</h3>
+
+                        <span class="difficulty-level-badge">
+                            Уровень {{ item.level }}
+                        </span>
+                    </div>
+
+                    <dl>
+                        <div>
+                            <dt>Правильных ответов</dt>
+                            <dd>
+                                {{ item.correct_answers }}
+                            </dd>
+                        </div>
+
+                        {% if settings_object.auto_increase_difficulty %}
+                            <div>
+                                <dt>До следующего уровня</dt>
+                                <dd>
+                                    {% if item.maximum_level_reached %}
+                                        Максимальный уровень
+                                    {% else %}
+                                        {{ item.answers_to_next_level }}
+                                    {% endif %}
+                                </dd>
+                            </div>
+                        {% endif %}
+                    </dl>
+
+                    {% if settings_object.auto_increase_difficulty %}
+                        <div
+                            class="difficulty-progress"
+                            role="progressbar"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="{{ item.progress_percent }}"
+                        >
+                            <div
+                                class="difficulty-progress__value"
+                                style="
+                                    width:
+                                    {{ item.progress_percent }}%;
+                                "
+                            ></div>
+                        </div>
+
+                        <small>
+                            {{ item.progress_percent }}%
+                        </small>
+                    {% endif %}
+                </article>
+            {% endfor %}
         </div>
     </section>
 

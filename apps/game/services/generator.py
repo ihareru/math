@@ -8,7 +8,10 @@ from apps.game.models import (
     OperationGenerationSettings,
     UserGenerationSettings,
 )
-
+from .generation_settings import (
+    calculate_operation_difficulty_level,
+    create_default_generation_settings,
+)
 from .generator_exceptions import (
     InvalidGenerationSettingsError,
     NoEnabledOperationsError,
@@ -93,8 +96,14 @@ def generate_question(
     )
 
     difficulty_level = (
-        generation_settings
-        .current_difficulty_level
+        calculate_operation_difficulty_level(
+            generation_settings=(
+                generation_settings
+            ),
+            operation=(
+                operation_settings.operation
+            ),
+        )
     )
 
     last_valid_question = None
@@ -178,9 +187,6 @@ def _get_generation_settings(
     Дополнительный get_or_create защищает старые
     или импортированные аккаунты.
     """
-    from .generation_settings import (
-        create_default_generation_settings,
-    )
 
     return create_default_generation_settings(
         user=user,

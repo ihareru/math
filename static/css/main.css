@@ -1947,3 +1947,99 @@ label.settings-checkbox-card {
         min-width: 180px;
     }
 }
+
+.difficulty-operation-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(230px, 1fr)
+    );
+    gap: 1rem;
+}
+
+.difficulty-operation-card {
+    padding: 1rem;
+    background: #f7f9fd;
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+}
+
+.difficulty-operation-card--add {
+    border-top-color: #4d8df7;
+}
+
+.difficulty-operation-card--sub {
+    border-top-color: #e99d38;
+}
+
+.difficulty-operation-card--mul {
+    border-top-color: #5caf75;
+}
+
+.difficulty-operation-card--div {
+    border-top-color: #a576db;
+}
+
+.difficulty-operation-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.difficulty-operation-card__header h3 {
+    margin: 0;
+}
+
+.difficulty-level-badge {
+    padding: 0.3rem 0.55rem;
+    color: #174b91;
+    background: #e5efff;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.difficulty-operation-card dl {
+    display: grid;
+    gap: 0.55rem;
+    margin-block: 1rem;
+}
+
+.difficulty-operation-card dl div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.difficulty-operation-card dt {
+    color: var(--muted-color);
+}
+
+.difficulty-operation-card dd {
+    margin: 0;
+    font-weight: 800;
+    text-align: right;
+}
+
+.difficulty-progress {
+    height: 10px;
+    overflow: hidden;
+    background: #dde5f0;
+    border-radius: 999px;
+}
+
+.difficulty-progress__value {
+    height: 100%;
+    max-width: 100%;
+    background: var(--primary-color);
+    border-radius: inherit;
+    transition: width 0.25s ease;
+}
+
+.difficulty-operation-card > small {
+    display: block;
+    margin-top: 0.4rem;
+    color: var(--muted-color);
+    text-align: right;
+}

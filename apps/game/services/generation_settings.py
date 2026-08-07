@@ -1,6 +1,10 @@
+from dataclasses import dataclass
+
 from django.db import transaction
+from django.db.models import Count, Q
 
 from apps.game.models import (
+    GameQuestion,
     OperationGenerationSettings,
     UserGenerationSettings,
 )
@@ -61,6 +65,21 @@ DEFAULT_OPERATION_SETTINGS = {
     },
 }
 
+QUESTION_OPERATION_MAP = {
+    OperationGenerationSettings.Operation.ADD: (
+        GameQuestion.Operation.ADD
+    ),
+    OperationGenerationSettings.Operation.SUB: (
+        GameQuestion.Operation.SUB
+    ),
+    OperationGenerationSettings.Operation.MUL: (
+        GameQuestion.Operation.MUL
+    ),
+    OperationGenerationSettings.Operation.DIV: (
+        GameQuestion.Operation.DIV
+    ),
+}
+
 
 @transaction.atomic
 def create_default_generation_settings(*, user):
@@ -89,3 +108,329 @@ def create_default_generation_settings(*, user):
         )
 
     return generation_settings
+
+
+@dataclass(frozen=True)
+class OperationDifficultyProgress:
+    operation: str
+    title: str
+    level: int
+    correct_answers: int
+    answers_on_current_level: int
+    answers_to_next_level: int
+    progress_percent: float
+    maximum_level_reached: bool
+
+
+def get_operation_correct_answers(
+    *,
+    user,
+    operation: str,
+) -> int:
+    """
+    Возвращает количество правильных ответов
+    пользователя для выбранного действия.
+
+    Повторения ошибок также учитываются, поскольку
+    являются полноценными решёнными примерами.
+    """
+    question_operation = (
+        QUESTION_OPERATION_MAP.get(operation)
+    )
+
+    if question_operation is None:
+        return 0
+
+    return (
+        GameQuestion.objects
+        .filter(
+            session__user=user,
+            operation=question_operation,
+            answered_at__isnull=False,
+            is_correct=True,
+        )
+        .count()
+    )
+
+def calculate_operation_difficulty_level(
+    *,
+    generation_settings:
+        UserGenerationSettings,
+    operation: str,
+) -> int:
+    """
+    Рассчитывает уровень сложности конкретного
+    математического действия.
+    """
+    if not generation_settings.auto_increase_difficulty:
+        return 1
+
+    correct_answers = (
+        get_operation_correct_answers(
+            user=generation_settings.user,
+            operation=operation,
+        )
+    )
+
+    answers_per_level = max(
+        1,
+        generation_settings.correct_answers_per_level,
+    )
+
+    calculated_level = (
+        correct_answers
+        // answers_per_level
+        + 1
+    )
+
+    return min(
+        calculated_level,
+        generation_settings.maximum_difficulty_level,
+    )
+
+def get_operation_difficulty_progress(
+    *,
+    generation_settings:
+        UserGenerationSettings,
+    operation_settings:
+        OperationGenerationSettings,
+) -> OperationDifficultyProgress:
+    correct_answers = (
+        get_operation_correct_answers(
+            user=generation_settings.user,
+            operation=operation_settings.operation,
+        )
+    )
+
+    level = calculate_operation_difficulty_level(
+        generation_settings=generation_settings,
+        operation=operation_settings.operation,
+    )
+
+    answers_per_level = max(
+        1,
+        generation_settings.correct_answers_per_level,
+    )
+
+    maximum_level_reached = (
+        level
+        >= generation_settings.maximum_difficulty_level
+    )
+
+    if (
+        not generation_settings.auto_increase_difficulty
+        or maximum_level_reached
+    ):
+        answers_on_current_level = 0
+        answers_to_next_level = 0
+        progress_percent = (
+            100.0
+            if maximum_level_reached
+            else 0.0
+        )
+    else:
+        answers_on_current_level = (
+            correct_answers
+            % answers_per_level
+        )
+
+        answers_to_next_level = (
+            answers_per_level
+            - answers_on_current_level
+        )
+
+        progress_percent = round(
+            answers_on_current_level
+            * 100
+            / answers_per_level,
+            1,
+        )
+
+    return OperationDifficultyProgress(
+        operation=operation_settings.operation,
+        title=(
+            operation_settings
+            .get_operation_display()
+        ),
+        level=level,
+        correct_answers=correct_answers,
+        answers_on_current_level=(
+            answers_on_current_level
+        ),
+        answers_to_next_level=(
+            answers_to_next_level
+        ),
+        progress_percent=progress_percent,
+        maximum_level_reached=(
+            maximum_level_reached
+        ),
+    )
+
+def get_all_operation_difficulty_progress(
+    *,
+    generation_settings:
+        UserGenerationSettings,
+):
+    operation_order = {
+        OperationGenerationSettings.Operation.ADD: 1,
+        OperationGenerationSettings.Operation.SUB: 2,
+        OperationGenerationSettings.Operation.MUL: 3,
+        OperationGenerationSettings.Operation.DIV: 4,
+    }
+
+    correct_answers_by_operation = (
+        get_correct_answers_by_operation(
+            user=generation_settings.user,
+        )
+    )
+
+    operation_settings = sorted(
+        generation_settings.operations.all(),
+        key=lambda item: operation_order.get(
+            item.operation,
+            99,
+        ),
+    )
+
+    result = []
+
+    for item in operation_settings:
+        question_operation = (
+            QUESTION_OPERATION_MAP.get(
+                item.operation
+            )
+        )
+
+        correct_answers = (
+            correct_answers_by_operation.get(
+                question_operation,
+                0,
+            )
+        )
+
+        result.append(
+            build_operation_difficulty_progress(
+                generation_settings=(
+                    generation_settings
+                ),
+                operation_settings=item,
+                correct_answers=correct_answers,
+            )
+        )
+
+    return result
+
+def get_correct_answers_by_operation(
+    *,
+    user,
+) -> dict[str, int]:
+    rows = (
+        GameQuestion.objects
+        .filter(
+            session__user=user,
+            answered_at__isnull=False,
+            is_correct=True,
+        )
+        .values("operation")
+        .annotate(
+            correct_count=Count("id")
+        )
+    )
+
+    return {
+        row["operation"]: row["correct_count"]
+        for row in rows
+    }
+
+def build_operation_difficulty_progress(
+    *,
+    generation_settings:
+        UserGenerationSettings,
+    operation_settings:
+        OperationGenerationSettings,
+    correct_answers: int,
+) -> OperationDifficultyProgress:
+    if generation_settings.auto_increase_difficulty:
+        answers_per_level = max(
+            1,
+            generation_settings
+            .correct_answers_per_level,
+        )
+
+        level = min(
+            (
+                correct_answers
+                // answers_per_level
+                + 1
+            ),
+            generation_settings
+            .maximum_difficulty_level,
+        )
+    else:
+        answers_per_level = max(
+            1,
+            generation_settings
+            .correct_answers_per_level,
+        )
+
+        level = 1
+
+    maximum_level_reached = (
+        level
+        >= generation_settings
+        .maximum_difficulty_level
+    )
+
+    if (
+        not generation_settings
+        .auto_increase_difficulty
+    ):
+        answers_on_current_level = 0
+        answers_to_next_level = 0
+        progress_percent = 0.0
+
+    elif maximum_level_reached:
+        answers_on_current_level = (
+            answers_per_level
+        )
+
+        answers_to_next_level = 0
+        progress_percent = 100.0
+
+    else:
+        answers_on_current_level = (
+            correct_answers
+            % answers_per_level
+        )
+
+        answers_to_next_level = (
+            answers_per_level
+            - answers_on_current_level
+        )
+
+        progress_percent = round(
+            answers_on_current_level
+            * 100
+            / answers_per_level,
+            1,
+        )
+
+    return OperationDifficultyProgress(
+        operation=operation_settings.operation,
+        title=(
+            operation_settings
+            .get_operation_display()
+        ),
+        level=level,
+        correct_answers=correct_answers,
+        answers_on_current_level=(
+            answers_on_current_level
+        ),
+        answers_to_next_level=(
+            answers_to_next_level
+        ),
+        progress_percent=progress_percent,
+        maximum_level_reached=(
+            maximum_level_reached
+        ),
+    )

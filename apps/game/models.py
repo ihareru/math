@@ -745,30 +745,31 @@ class UserGenerationSettings(models.Model):
     @property
     def current_difficulty_level(self):
         """
-        Текущий уровень рассчитывается по общей
-        статистике правильных ответов.
+        Возвращает максимальный достигнутый уровень
+        среди математических действий.
 
-        Уровень начинается с 1.
+        Генератор рассчитывает уровень отдельно для
+        каждого действия.
         """
         if not self.auto_increase_difficulty:
             return 1
 
-        try:
-            total_correct = (
-                self.user.game_statistics.total_correct
-            )
-        except UserGameStatistics.DoesNotExist:
-            total_correct = 0
-
-        calculated_level = (
-            total_correct
-            // self.correct_answers_per_level
-            + 1
+        from apps.game.services.generation_settings import (
+            get_all_operation_difficulty_progress,
         )
 
-        return min(
-            calculated_level,
-            self.maximum_difficulty_level,
+        progress_items = (
+            get_all_operation_difficulty_progress(
+                generation_settings=self,
+            )
+        )
+
+        if not progress_items:
+            return 1
+
+        return max(
+            item.level
+            for item in progress_items
         )
 
 

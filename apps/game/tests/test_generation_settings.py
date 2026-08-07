@@ -1,8 +1,11 @@
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from apps.accounts.models import User
 from apps.game.models import (
+    GameQuestion,
+    GameSession,
     OperationGenerationSettings,
     UserGenerationSettings,
 )
@@ -125,13 +128,113 @@ class GenerationSettingsTests(TestCase):
         settings_object.auto_increase_difficulty = True
         settings_object.correct_answers_per_level = 50
         settings_object.maximum_difficulty_level = 10
+
         settings_object.save()
 
-        statistics = self.user.game_statistics
-        statistics.total_correct = 125
-        statistics.save()
+        game_session = GameSession.objects.create(
+            user=self.user,
+            mode=GameSession.Mode.ADD,
+        )
+
+        questions = []
+
+        for index in range(125):
+            questions.append(
+                GameQuestion(
+                    session=game_session,
+                    sequence_number=index + 1,
+                    operation=GameQuestion.Operation.ADD,
+                    num1=1,
+                    num2=1,
+                    operands=[
+                        1,
+                        1,
+                    ],
+                    correct_answer=2,
+                    user_answer=2,
+                    is_correct=True,
+                    answered_at=timezone.now(),
+                    response_time_ms=1000,
+                )
+            )
+
+        GameQuestion.objects.bulk_create(
+            questions
+        )
 
         self.assertEqual(
             settings_object.current_difficulty_level,
             3,
+        )
+
+    def test_operation_difficulty_is_independent(self):
+        settings_object = (
+            self.user.generation_settings
+        )
+
+        settings_object.auto_increase_difficulty = True
+        settings_object.correct_answers_per_level = 10
+        settings_object.maximum_difficulty_level = 10
+        settings_object.save()
+
+        game_session = GameSession.objects.create(
+            user=self.user,
+            mode=GameSession.Mode.ADD,
+        )
+
+        questions = []
+
+        for index in range(25):
+            questions.append(
+                GameQuestion(
+                    session=game_session,
+                    sequence_number=index + 1,
+                    operation=GameQuestion.Operation.ADD,
+                    num1=1,
+                    num2=1,
+                    operands=[1, 1],
+                    correct_answer=2,
+                    user_answer=2,
+                    is_correct=True,
+                    answered_at=timezone.now(),
+                    response_time_ms=1000,
+                )
+            )
+
+        GameQuestion.objects.bulk_create(
+            questions
+        )
+
+        from apps.game.services.generation_settings import (
+            calculate_operation_difficulty_level,
+        )
+
+        addition_level = (
+            calculate_operation_difficulty_level(
+                generation_settings=settings_object,
+                operation=(
+                    OperationGenerationSettings
+                    .Operation.ADD
+                ),
+            )
+        )
+
+        multiplication_level = (
+            calculate_operation_difficulty_level(
+                generation_settings=settings_object,
+                operation=(
+                    OperationGenerationSettings
+                    .Operation.MUL
+                ),
+            )
+        )
+
+        self.assertEqual(
+            addition_level,
+            3,
+        )
+
+        self.assertEqual(
+            multiplication_level,
+            1,
         )
