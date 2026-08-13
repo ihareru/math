@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import User
+from apps.game.models import UserGameStatistics
 
 
 class DashboardViewTests(TestCase):
@@ -144,4 +145,60 @@ class DashboardViewTests(TestCase):
 
         self.assertTrue(
             response.context["page_obj"].has_next()
+        )
+
+    def test_dashboard_does_not_fail_when_user_has_no_game_statistics(
+            self,
+    ):
+        user = self.create_user(
+            email="nostats@example.com",
+            display_name="Игрок без статистики",
+            stars=10,
+        )
+
+        UserGameStatistics.objects.filter(
+            user=user,
+        ).delete()
+
+        response = self.client.get(
+            reverse("dashboard:home")
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertNotContains(
+            response,
+            "Игрок без статистики",
+        )
+
+    def test_authenticated_user_without_statistics_can_open_dashboard(
+            self,
+    ):
+        user = self.create_user(
+            email="nostats-auth@example.com",
+            display_name="Игрок без статистики",
+            stars=10,
+        )
+
+        UserGameStatistics.objects.filter(
+            user=user,
+        ).delete()
+
+        self.client.force_login(
+            user,
+            backend=(
+                "apps.accounts.backends.EmailBackend"
+            ),
+        )
+
+        response = self.client.get(
+            reverse("dashboard:home")
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
         )

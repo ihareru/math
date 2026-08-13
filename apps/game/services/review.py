@@ -5,6 +5,7 @@ from django.utils import timezone
 from apps.game.models import (
     GameQuestion,
     GameSession,
+    UserGameStatistics,
 )
 
 from .exceptions import (
@@ -119,7 +120,14 @@ def start_review_session(
         last_activity_at=now,
     )
 
-    statistics = user.game_statistics
+    statistics, _ = (
+        UserGameStatistics.objects
+        .select_for_update()
+        .get_or_create(
+            user=user,
+        )
+    )
+
     statistics.total_sessions += 1
 
     statistics.save(

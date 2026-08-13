@@ -58,10 +58,10 @@ def calculate_accuracy(
 def get_rating_users_queryset():
     """
     Возвращает пользователей, разрешивших отображение
-    в публичном рейтинге.
+    в публичном рейтинге и имеющих игровую статистику.
 
-    В запрос не включаются email и другие личные данные
-    для формирования публичного результата.
+    Пользователь без UserGameStatistics не должен
+    ломать публичную главную страницу.
     """
     return (
         User.objects
@@ -69,6 +69,7 @@ def get_rating_users_queryset():
             is_active=True,
             email_verified=True,
             show_in_rating=True,
+            game_statistics__isnull=False,
         )
         .select_related(
             "game_statistics",
