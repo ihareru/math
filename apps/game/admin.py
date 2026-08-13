@@ -37,6 +37,13 @@ class UserGameStatisticsAdmin(admin.ModelAdmin):
 
     accuracy.short_description = "Точность"
 
+    def has_delete_permission(
+            self,
+            request,
+            obj=None,
+    ):
+        return False
+
 
 class GameQuestionInline(admin.TabularInline):
     model = GameQuestion
