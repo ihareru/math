@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 
 def main():
-    """Run administrative tasks."""
+    """Run administrative tasks.."""
 
     base_dir = os.path.dirname(
         os.path.abspath(__file__)
